@@ -28,27 +28,56 @@ npm install
 El archivo `.env` contiene las variables de entorno:
 
 ```env
-PORT=5000
+PORT=5001
 JWT_SECRET=tu-secreto-super-seguro-cambiar-en-produccion
-FRONTEND_URL=http://localhost:5173
-DATABASE_URL=postgresql://admin:$40M1n*!!2023@192.168.0.254:5432/DB_QPREX
+JWT_EXPIRES=8h
+FRONTEND_URL=http://192.168.0.19:5173
+
+# Base de Datos PostgreSQL Local (Docker)
+DATABASE_URL=postgresql://postgres:postgres123@postgres-db:5432/firmas_db
+
+# Configuración Active Directory
+AD_PROTOCOL=ldap
+AD_HOSTNAME=192.168.0.253
+AD_PORT=389
+AD_BASE_DN=DC=prexxa,DC=local
+AD_SEARCH_BASE=DC=prexxa,DC=local
+AD_BIND_USER=glpi.sync@prexxa.local
+AD_BIND_PASS=adminPre8909
+AD_USER_SEARCH_FILTER=(objectClass=user)
+AD_STARTTLS=false
 ```
 
 ## Iniciar el Servidor
 
-### Modo desarrollo (con nodemon - reinicio automático):
+### Con Docker (Recomendado):
+
+Desde la raíz del proyecto:
+
+```bash
+docker-compose up
+```
+
+Esto iniciará:
+- PostgreSQL (Base de datos local con volumen persistente en `./bd`)
+- Backend (GraphQL Server en puerto 5001)
+- Frontend (React/Vite en puerto 5173)
+
+### Modo desarrollo local (sin Docker):
+
 ```bash
 npm run dev
 ```
 
-### Modo producción:
+### Modo producción local:
+
 ```bash
 npm start
 ```
 
 El servidor estará disponible en:
-- **API GraphQL**: http://localhost:5000/graphql
-- **Health Check**: http://localhost:5000/health
+- **API GraphQL**: http://192.168.0.19:5001/graphql
+- **Health Check**: http://192.168.0.19:5001/health
 
 ## Schema GraphQL
 
@@ -165,9 +194,19 @@ Authorization: Bearer <tu-token>
 
 ## Base de datos
 
-Actualmente el servidor usa **datos en memoria** (arrays). Para integrar con PostgreSQL:
+El servidor usa **PostgreSQL** en Docker para persistencia de datos:
 
-1. Instala el cliente de PostgreSQL:
+- **Contenedor**: `firmas_db` (postgres:14-alpine)
+- **Credenciales locales**:
+  - Usuario: `postgres`
+  - Password: `postgres123`
+  - Base de datos: `firmas_db`
+- **Volumen**: Los datos se persisten en la carpeta `./bd` del proyecto
+- **Conexión interna**: Los servicios de Docker se conectan usando el hostname `postgres-db`
+
+Para integrar con PostgreSQL:
+
+1. Instala el cliente de PostgreSQL (si aún no está instalado):
    ```bash
    npm install pg
    ```
@@ -176,9 +215,9 @@ Actualmente el servidor usa **datos en memoria** (arrays). Para integrar con Pos
 
 ## Próximos pasos
 
-- [ ] Integrar con base de datos PostgreSQL
+- [ ] Integrar resolvers con base de datos PostgreSQL
+- [ ] Crear esquema de tablas (migrations)
 - [ ] Agregar validaciones de entrada
 - [ ] Implementar paginación
 - [ ] Agregar tests unitarios
-- [ ] Implementar rate limiting
-- [ ] Agregar logging
+- [ ] Agregar logging mejorado

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import axios from 'axios';
 import './Login.css';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/graphql';
+const API_URL = import.meta.env.VITE_API_URL || 'http://192.168.0.19:5001/graphql';
 
 function Login({ onLogin }) {
   const [formData, setFormData] = useState({
@@ -120,7 +120,7 @@ function Login({ onLogin }) {
                   name="username"
                   value={formData.username}
                   onChange={handleChange}
-                  placeholder="usuario o usuario@prexxa.local"
+                  placeholder="Usuario"
                   required
                   autoComplete="username"
                   className="form-input"
@@ -193,37 +193,7 @@ function Login({ onLogin }) {
           </div>
         </div>
 
-        <div className="info-section">
-          <div className="feature-card">
-            <div className="feature-icon">
-              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-            <h3>Seguro</h3>
-            <p>Autenticación encriptada y protección de datos</p>
-          </div>
-
-          <div className="feature-card">
-            <div className="feature-icon">
-              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M13 10V3L4 14H11L11 21L20 10L13 10Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-            <h3>Rápido</h3>
-            <p>Acceso instantáneo a tus documentos</p>
-          </div>
-
-          <div className="feature-card">
-            <div className="feature-icon">
-              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 6V12L16 14M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-            <h3>24/7</h3>
-            <p>Disponible en cualquier momento y lugar</p>
-          </div>
-        </div>
+        
       </div>
     </div>
   );

@@ -42,7 +42,7 @@ async function startServer() {
 
   // CORS
   app.use(cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin: process.env.FRONTEND_URL || 'http://192.168.0.19:5173',
     credentials: true,
   }));
 
@@ -96,12 +96,13 @@ async function startServer() {
 
   // Iniciar servidor
   app.listen(PORT, () => {
-    console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
-    console.log(`📊 GraphQL disponible en http://localhost:${PORT}${server.graphqlPath}`);
+    console.log(`🚀 Servidor corriendo en http://192.168.0.19:${PORT}`);
+    console.log(`📊 GraphQL disponible en http://192.168.0.19:${PORT}${server.graphqlPath}`);
     console.log(`🔐 Autenticación Active Directory configurada`);
     console.log(`   - Host: ${process.env.AD_HOSTNAME || 'No configurado'}`);
     console.log(`   - Protocol: ${process.env.AD_PROTOCOL || 'ldap'}`);
     console.log(`   - Base DN: ${process.env.AD_BASE_DN || 'No configurado'}`);
+    console.log(`💾 Base de datos: ${process.env.DATABASE_URL ? 'PostgreSQL conectado' : 'No configurado'}`);
   });
 }
 
