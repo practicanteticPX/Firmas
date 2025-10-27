@@ -1,12 +1,17 @@
 const { gql } = require('apollo-server-express');
 
 const typeDefs = gql`
+  scalar Upload
+
   type User {
     id: ID!
     name: String!
     email: String!
     role: String!
+    adUsername: String
+    isActive: Boolean!
     createdAt: String!
+    updatedAt: String!
   }
 
   type AuthPayload {
@@ -17,19 +22,54 @@ const typeDefs = gql`
   type Document {
     id: ID!
     title: String!
-    content: String
+    description: String
+    fileName: String!
+    filePath: String!
+    fileSize: Int!
+    mimeType: String!
     status: String!
-    createdBy: User!
+    uploadedBy: User!
+    uploadedById: ID!
     createdAt: String!
     updatedAt: String!
+    completedAt: String
+    # Campos calculados
+    totalSigners: Int
+    signedCount: Int
+    pendingCount: Int
+    signatures: [Signature!]
   }
 
   type Signature {
     id: ID!
+    document: Document!
     documentId: ID!
-    userId: ID!
-    signedAt: String!
-    signatureData: String!
+    signer: User!
+    signerId: ID!
+    signatureData: String
+    signatureType: String!
+    ipAddress: String
+    userAgent: String
+    status: String!
+    signedAt: String
+    createdAt: String!
+    updatedAt: String!
+  }
+
+  type DocumentSigner {
+    id: ID!
+    document: Document!
+    user: User!
+    orderPosition: Int!
+    isRequired: Boolean!
+    notifiedAt: String
+    createdAt: String!
+  }
+
+  type UploadResponse {
+    success: Boolean!
+    message: String!
+    document: Document
   }
 
   type Query {
@@ -42,13 +82,16 @@ const typeDefs = gql`
     documents: [Document!]!
     document(id: ID!): Document
     myDocuments: [Document!]!
+    pendingDocuments: [Document!]!
+    documentsByStatus(status: String!): [Document!]!
 
     # Firmas
     signatures(documentId: ID!): [Signature!]!
+    mySignatures: [Signature!]!
   }
 
   type Mutation {
-    # Autenticaci�n
+    # Autenticación
     login(email: String!, password: String!): AuthPayload!
     register(name: String!, email: String!, password: String!): AuthPayload!
 
@@ -57,12 +100,14 @@ const typeDefs = gql`
     deleteUser(id: ID!): Boolean!
 
     # Documentos
-    createDocument(title: String!, content: String): Document!
-    updateDocument(id: ID!, title: String, content: String, status: String): Document!
+    uploadDocument(title: String!, description: String): UploadResponse!
+    updateDocument(id: ID!, title: String, description: String, status: String): Document!
     deleteDocument(id: ID!): Boolean!
+    assignSigners(documentId: ID!, userIds: [ID!]!): Boolean!
 
     # Firmas
     signDocument(documentId: ID!, signatureData: String!): Signature!
+    rejectDocument(documentId: ID!, reason: String): Boolean!
   }
 `;
 

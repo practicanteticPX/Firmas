@@ -1,10 +1,22 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Login from './components/login/Login.jsx'
+import Dashboard from './components/dashboard/Dashboard-funcional.jsx'
 import './App.css'
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [user, setUser] = useState(null)
+
+  // Verificar si hay una sesión guardada al cargar la app
+  useEffect(() => {
+    const token = localStorage.getItem('token')
+    const savedUser = localStorage.getItem('user')
+
+    if (token && savedUser) {
+      setIsAuthenticated(true)
+      setUser(JSON.parse(savedUser))
+    }
+  }, [])
 
   const handleLogin = (token, userData) => {
     // Guardar el token en localStorage
@@ -27,10 +39,7 @@ function App() {
       {!isAuthenticated ? (
         <Login onLogin={handleLogin} />
       ) : (
-        <div style={{ padding: '20px', textAlign: 'center' }}>
-          <h1>Bienvenido, {user?.name || user?.email}</h1>
-          <button onClick={handleLogout}>Cerrar Sesión</button>
-        </div>
+        <Dashboard user={user} onLogout={handleLogout} />
       )}
     </>
   )

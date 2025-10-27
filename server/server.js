@@ -4,9 +4,11 @@ const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const path = require('path');
 require('dotenv').config();
 
 const { typeDefs, resolvers } = require('./graphql');
+const uploadRoutes = require('./routes/upload');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'tu-secreto-super-seguro-cambiar-en-produccion';
 const PORT = process.env.PORT || 5001;
@@ -47,6 +49,12 @@ async function startServer() {
   }));
 
   app.use(express.json());
+
+  // Servir archivos estáticos de la carpeta uploads
+  app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+  // Rutas REST para subida de archivos
+  app.use('/api', uploadRoutes);
 
   // Crear servidor Apollo
   const server = new ApolloServer({

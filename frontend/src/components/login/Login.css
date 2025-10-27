@@ -204,6 +204,7 @@
   color: #1a1a1a;
   transition: all 0.3s ease;
   font-family: inherit;
+  text-indent: 1vw;
 }
 
 .form-input:focus {

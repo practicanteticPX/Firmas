@@ -1,5 +1,6 @@
 const typeDefs = require('./schema');
-const resolvers = require('./resolvers');
+// Usar resolvers con base de datos real
+const resolvers = require('./resolvers-db');
 
 module.exports = {
   typeDefs,

@@ -45,13 +45,32 @@ const resolvers = {
     // Obtener documentos del usuario autenticado
     myDocuments: (_, __, { user }) => {
       if (!user) throw new Error('No autenticado');
-      return documents.filter(d => d.createdBy.id === user.id);
+      return documents.filter(d => d.uploadedById === user.id);
+    },
+
+    // Obtener documentos pendientes de firma
+    pendingDocuments: (_, __, { user }) => {
+      if (!user) throw new Error('No autenticado');
+      // Por ahora retornamos documentos con status 'pending'
+      return documents.filter(d => d.status === 'pending');
+    },
+
+    // Obtener documentos por estado
+    documentsByStatus: (_, { status }, { user }) => {
+      if (!user) throw new Error('No autenticado');
+      return documents.filter(d => d.status === status);
     },
 
     // Obtener firmas de un documento
     signatures: (_, { documentId }, { user }) => {
       if (!user) throw new Error('No autenticado');
       return signatures.filter(s => s.documentId === documentId);
+    },
+
+    // Obtener firmas del usuario
+    mySignatures: (_, __, { user }) => {
+      if (!user) throw new Error('No autenticado');
+      return signatures.filter(s => s.userId === user.id);
     },
   },
 
@@ -182,42 +201,82 @@ const resolvers = {
       return true;
     },
 
-    // Crear documento
-    createDocument: (_, { title, content }, { user }) => {
+    // Subir documento (reemplaza createDocument)
+    uploadDocument: async (_, { title, description }, { user }) => {
       if (!user) throw new Error('No autenticado');
 
-      const newDocument = {
-        id: String(documents.length + 1),
-        title,
-        content: content || '',
-        status: 'draft',
-        createdBy: users.find(u => u.id === user.id),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
+      try {
+        // TODO: Aquí se implementará la subida real del archivo con Multer
+        // Por ahora, creamos un documento mock
+        const newDocument = {
+          id: String(documents.length + 1),
+          title,
+          description: description || '',
+          fileName: 'documento.pdf',
+          filePath: '/uploads/documento.pdf',
+          fileSize: 0,
+          mimeType: 'application/pdf',
+          status: 'pending',
+          uploadedBy: users.find(u => u.id === user.id),
+          uploadedById: user.id,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          completedAt: null,
+          totalSigners: 0,
+          signedCount: 0,
+          pendingCount: 0,
+        };
 
-      documents.push(newDocument);
-      return newDocument;
+        documents.push(newDocument);
+
+        return {
+          success: true,
+          message: 'Documento subido exitosamente',
+          document: newDocument,
+        };
+      } catch (error) {
+        return {
+          success: false,
+          message: error.message || 'Error al subir el documento',
+          document: null,
+        };
+      }
     },
 
     // Actualizar documento
-    updateDocument: (_, { id, title, content, status }, { user }) => {
+    updateDocument: (_, { id, title, description, status }, { user }) => {
       if (!user) throw new Error('No autenticado');
 
       const docIndex = documents.findIndex(d => d.id === id);
       if (docIndex === -1) throw new Error('Documento no encontrado');
 
       const doc = documents[docIndex];
-      if (doc.createdBy.id !== user.id && user.role !== 'admin') {
+      if (doc.uploadedById !== user.id && user.role !== 'admin') {
         throw new Error('No autorizado');
       }
 
       if (title) doc.title = title;
-      if (content) doc.content = content;
+      if (description) doc.description = description;
       if (status) doc.status = status;
       doc.updatedAt = new Date().toISOString();
 
       return doc;
+    },
+
+    // Asignar firmantes a un documento
+    assignSigners: (_, { documentId, userIds }, { user }) => {
+      if (!user) throw new Error('No autenticado');
+
+      const doc = documents.find(d => d.id === documentId);
+      if (!doc) throw new Error('Documento no encontrado');
+
+      if (doc.uploadedById !== user.id && user.role !== 'admin') {
+        throw new Error('No autorizado');
+      }
+
+      // TODO: Aquí se implementará la asignación real con la BD
+      // Por ahora solo retornamos true
+      return true;
     },
 
     // Eliminar documento
@@ -228,11 +287,25 @@ const resolvers = {
       if (docIndex === -1) throw new Error('Documento no encontrado');
 
       const doc = documents[docIndex];
-      if (doc.createdBy.id !== user.id && user.role !== 'admin') {
+      if (doc.uploadedById !== user.id && user.role !== 'admin') {
         throw new Error('No autorizado');
       }
 
       documents.splice(docIndex, 1);
+      return true;
+    },
+
+    // Rechazar documento
+    rejectDocument: (_, { documentId, reason }, { user }) => {
+      if (!user) throw new Error('No autenticado');
+
+      const doc = documents.find(d => d.id === documentId);
+      if (!doc) throw new Error('Documento no encontrado');
+
+      // TODO: Implementar rechazo con la BD
+      doc.status = 'rejected';
+      doc.updatedAt = new Date().toISOString();
+
       return true;
     },
 
@@ -258,7 +331,32 @@ const resolvers = {
 
   // Resolvers para campos anidados
   Document: {
-    createdBy: (parent) => parent.createdBy,
+    uploadedBy: (parent) => {
+      // Si uploadedBy ya es un objeto User, retornarlo
+      if (parent.uploadedBy && typeof parent.uploadedBy === 'object') {
+        return parent.uploadedBy;
+      }
+      // Si es un ID, buscar el usuario
+      return users.find(u => u.id === parent.uploadedById);
+    },
+    signatures: (parent) => {
+      return signatures.filter(s => s.documentId === parent.id);
+    },
+  },
+
+  Signature: {
+    document: (parent) => {
+      return documents.find(d => d.id === parent.documentId);
+    },
+    signer: (parent) => {
+      return users.find(u => u.id === parent.signerId || u.id === parent.userId);
+    },
+  },
+
+  User: {
+    // Agregar campo isActive por defecto
+    isActive: (parent) => parent.isActive !== undefined ? parent.isActive : true,
+    adUsername: (parent) => parent.adUsername || parent.username || null,
   },
 };
 
