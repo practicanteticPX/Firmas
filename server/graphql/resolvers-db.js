@@ -108,6 +108,28 @@ const resolvers = {
       return result.rows;
     },
 
+    // Obtener documentos firmados por el usuario
+    signedDocuments: async (_, __, { user }) => {
+      if (!user) throw new Error('No autenticado');
+
+      const result = await query(`
+        SELECT
+          d.*,
+          u.name as uploaded_by_name,
+          u.email as uploaded_by_email,
+          s.signed_at,
+          s.signature_type
+        FROM signatures s
+        JOIN documents d ON s.document_id = d.id
+        JOIN users u ON d.uploaded_by = u.id
+        WHERE s.signer_id = $1
+          AND s.status = 'signed'
+        ORDER BY s.signed_at DESC
+      `, [user.id]);
+
+      return result.rows;
+    },
+
     // Obtener documentos por estado
     documentsByStatus: async (_, { status }, { user }) => {
       if (!user) throw new Error('No autenticado');
@@ -148,6 +170,20 @@ const resolvers = {
         JOIN documents d ON s.document_id = d.id
         WHERE s.signer_id = $1
         ORDER BY s.created_at DESC
+      `, [user.id]);
+
+      return result.rows;
+    },
+
+    // Obtener usuarios disponibles para seleccionar como firmantes
+    availableSigners: async (_, __, { user }) => {
+      if (!user) throw new Error('No autenticado');
+
+      const result = await query(`
+        SELECT id, name, email, role
+        FROM users
+        WHERE id != $1
+        ORDER BY name ASC
       `, [user.id]);
 
       return result.rows;
@@ -440,6 +476,9 @@ const resolvers = {
     createdAt: (parent) => parent.created_at,
     updatedAt: (parent) => parent.updated_at,
     completedAt: (parent) => parent.completed_at,
+    // Campos presentes solo en signedDocuments
+    signedAt: (parent) => parent.signed_at,
+    signatureType: (parent) => parent.signature_type,
 
     uploadedBy: async (parent) => {
       const result = await query('SELECT * FROM users WHERE id = $1', [parent.uploaded_by]);

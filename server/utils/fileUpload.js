@@ -83,6 +83,11 @@ const upload = multer({
 const uploadSinglePDF = upload.single('file');
 
 /**
+ * Middleware para manejar la subida de múltiples archivos PDF
+ */
+const uploadMultiplePDFs = upload.array('files', 20);
+
+/**
  * Elimina un archivo del sistema de archivos
  * @param {string} filePath - Ruta del archivo a eliminar
  */
@@ -131,6 +136,7 @@ const fileExists = (filePath) => {
 
 module.exports = {
   uploadSinglePDF,
+  uploadMultiplePDFs,
   deleteFile,
   getFileSize,
   fileExists,

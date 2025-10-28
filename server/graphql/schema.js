@@ -38,6 +38,9 @@ const typeDefs = gql`
     signedCount: Int
     pendingCount: Int
     signatures: [Signature!]
+    # Campos de firma (solo disponibles en signedDocuments)
+    signedAt: String
+    signatureType: String
   }
 
   type Signature {
@@ -77,12 +80,14 @@ const typeDefs = gql`
     me: User
     users: [User!]!
     user(id: ID!): User
+    availableSigners: [User!]!
 
     # Documentos
     documents: [Document!]!
     document(id: ID!): Document
     myDocuments: [Document!]!
     pendingDocuments: [Document!]!
+    signedDocuments: [Document!]!
     documentsByStatus(status: String!): [Document!]!
 
     # Firmas
