@@ -37,21 +37,51 @@ const graphqlLimiter = rateLimit({
 async function startServer() {
   const app = express();
 
-  // Middleware de seguridad
+  // Middleware de seguridad - Ajustado para desarrollo sin HTTPS
   app.use(helmet({
     contentSecurityPolicy: process.env.NODE_ENV === 'production' ? undefined : false,
+    crossOriginEmbedderPolicy: false, // Permitir que los PDFs se embeden
+    crossOriginResourcePolicy: { policy: "cross-origin" }, // Permitir recursos cross-origin
+    crossOriginOpenerPolicy: false, // Deshabilitar COOP para desarrollo sin HTTPS
+    strictTransportSecurity: false, // Deshabilitar HSTS para desarrollo sin HTTPS
+    frameguard: false // Deshabilitar X-Frame-Options para permitir iframes
   }));
 
-  // CORS
+  // Configuración de múltiples orígenes permitidos
+  const allowedOrigins = process.env.FRONTEND_URL
+    ? process.env.FRONTEND_URL.split(',').map(url => url.trim())
+    : [
+        'http://firmapro.com:5173',
+        'http://www.firmapro.com:5173',
+        'http://192.168.0.30:5173',
+        'http://localhost:5173'
+      ];
+
+  // CORS con múltiples orígenes
   app.use(cors({
-    origin: process.env.FRONTEND_URL || 'http://192.168.0.19:5173',
+    origin: function (origin, callback) {
+      // Permitir requests sin origin (como mobile apps o curl)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        console.log('⚠️  Origen bloqueado por CORS:', origin);
+        callback(null, true); // En desarrollo, permitir todos los orígenes
+      }
+    },
     credentials: true,
   }));
 
   app.use(express.json());
 
-  // Servir archivos estáticos de la carpeta uploads
-  app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+  // Servir archivos estáticos de la carpeta uploads con headers apropiados para PDFs
+  app.use('/uploads', (req, res, next) => {
+    // Permitir que los PDFs se muestren en iframes del frontend
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.setHeader('Cross-Origin-Embedder-Policy', 'unsafe-none');
+    next();
+  }, express.static(path.join(__dirname, 'uploads')));
 
   // Rutas REST para subida de archivos
   app.use('/api', uploadRoutes);
@@ -104,8 +134,8 @@ async function startServer() {
 
   // Iniciar servidor
   app.listen(PORT, () => {
-    console.log(`🚀 Servidor corriendo en http://192.168.0.19:${PORT}`);
-    console.log(`📊 GraphQL disponible en http://192.168.0.19:${PORT}${server.graphqlPath}`);
+    console.log(`🚀 Servidor corriendo en http://192.168.0.30:${PORT}`);
+    console.log(`📊 GraphQL disponible en http://192.168.0.30:${PORT}${server.graphqlPath}`);
     console.log(`🔐 Autenticación Active Directory configurada`);
     console.log(`   - Host: ${process.env.AD_HOSTNAME || 'No configurado'}`);
     console.log(`   - Protocol: ${process.env.AD_PROTOCOL || 'ldap'}`);

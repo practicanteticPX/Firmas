@@ -8,9 +8,9 @@ const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'tu-secreto-super-seguro-cambiar-en-produccion';
 
 /**
- * Middleware para verificar autenticación
+ * Middleware para verificar autenticación y cargar datos del usuario
  */
-const authenticate = (req, res, next) => {
+const authenticate = async (req, res, next) => {
   try {
     const token = req.headers.authorization?.replace('Bearer ', '');
     if (!token) {
@@ -18,7 +18,14 @@ const authenticate = (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, JWT_SECRET);
-    req.user = decoded;
+
+    // Cargar nombre del usuario desde la base de datos
+    const userResult = await query('SELECT id, name, email, role FROM users WHERE id = $1', [decoded.id]);
+    if (userResult.rows.length === 0) {
+      return res.status(401).json({ success: false, message: 'Usuario no encontrado' });
+    }
+
+    req.user = userResult.rows[0];
     next();
   } catch (error) {
     return res.status(401).json({ success: false, message: 'Token inválido' });
@@ -56,6 +63,11 @@ router.post('/upload', authenticate, (req, res) => {
     }
 
     try {
+      // Construir ruta relativa: usuario/archivo.pdf
+      const { normalizeUserName } = require('../utils/fileUpload');
+      const normalizedUserName = normalizeUserName(req.user.name);
+      const relativePath = `uploads/${normalizedUserName}/${req.file.filename}`;
+
       // Guardar el documento en la base de datos
       const result = await query(
         `INSERT INTO documents (
@@ -73,7 +85,7 @@ router.post('/upload', authenticate, (req, res) => {
           title.trim(),
           description?.trim() || null,
           req.file.filename,
-          req.file.path,
+          relativePath,
           req.file.size,
           req.file.mimetype,
           'pending',

@@ -8,10 +8,46 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
+/**
+ * Normaliza un nombre para usar como carpeta
+ * Elimina caracteres especiales y espacios
+ */
+const normalizeUserName = (name) => {
+  return name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Eliminar acentos
+    .replace(/[^a-z0-9]/g, '_') // Reemplazar caracteres especiales por _
+    .replace(/_+/g, '_') // Reemplazar múltiples _ por uno solo
+    .replace(/^_|_$/g, ''); // Eliminar _ al inicio y final
+};
+
+/**
+ * Obtiene o crea la carpeta del usuario
+ */
+const getUserUploadDir = (userName) => {
+  const normalizedName = normalizeUserName(userName);
+  const userDir = path.join(uploadDir, normalizedName);
+
+  if (!fs.existsSync(userDir)) {
+    fs.mkdirSync(userDir, { recursive: true });
+    console.log(`📁 Carpeta creada para usuario: ${normalizedName}`);
+  }
+
+  return userDir;
+};
+
 // Configuración de almacenamiento
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, uploadDir);
+    // Verificar que el usuario esté autenticado
+    if (!req.user || !req.user.name) {
+      return cb(new Error('Usuario no autenticado'), null);
+    }
+
+    // Crear y obtener la carpeta del usuario
+    const userDir = getUserUploadDir(req.user.name);
+    cb(null, userDir);
   },
   filename: function (req, file, cb) {
     // Generar nombre único: timestamp-random-original.pdf
@@ -99,4 +135,6 @@ module.exports = {
   getFileSize,
   fileExists,
   uploadDir,
+  normalizeUserName,
+  getUserUploadDir,
 };

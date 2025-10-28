@@ -53,8 +53,8 @@ docker-compose up -d
 
 Esto iniciará:
 - 🐘 **PostgreSQL** en puerto 5432 (datos guardados en `./bd/`)
-- 🚀 **Backend** en `http://192.168.0.19:5001`
-- ⚛️ **Frontend** en `http://192.168.0.19:5173`
+- 🚀 **Backend** en `http://192.168.0.30:5001`
+- ⚛️ **Frontend** en `http://192.168.0.30:5173`
 
 **Verificar que todo esté corriendo**:
 ```bash
@@ -73,7 +73,7 @@ firmas-postgres-db-1     Up
 
 ## Paso 3: Acceder al Sistema
 
-1. **Abrir navegador** en: `http://192.168.0.19:5173`
+1. **Abrir navegador** en: `http://192.168.0.30:5173`
 
 2. **Iniciar sesión** con tus credenciales de Active Directory
    - Usuario: tu usuario de red
@@ -201,7 +201,7 @@ LIMIT 10;
 
 ### Test 1: Health Check del Backend
 
-Abre en el navegador: `http://192.168.0.19:5001/health`
+Abre en el navegador: `http://192.168.0.30:5001/health`
 
 **Deberías ver**:
 ```json
@@ -218,7 +218,7 @@ Abre en el navegador: `http://192.168.0.19:5001/health`
 
 ### Test 2: Probar GraphQL
 
-Abre: `http://192.168.0.19:5001/graphql`
+Abre: `http://192.168.0.30:5001/graphql`
 
 **Query de prueba**:
 ```graphql
@@ -234,7 +234,7 @@ query {
 
 ### Test 3: Subir un Documento
 
-1. Login en `http://192.168.0.19:5173`
+1. Login en `http://192.168.0.30:5173`
 2. Sube un PDF de prueba
 3. Verifica que aparezca en "Mis Documentos"
 4. Verifica que el archivo existe en `./server/uploads/`

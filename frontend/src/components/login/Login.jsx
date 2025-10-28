@@ -2,7 +2,20 @@ import { useState } from 'react';
 import axios from 'axios';
 import './Login.css';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://192.168.0.19:5001/graphql';
+// Determinar el host del backend basándose en el hostname actual
+const getBackendHost = () => {
+  const hostname = window.location.hostname;
+  const protocol = window.location.protocol; // http: o https:
+
+  // Usar el mismo host desde donde se accede, solo cambiar el puerto
+  return `${protocol}//${hostname}:5001`;
+};
+
+const BACKEND_HOST = getBackendHost();
+const API_URL = `${BACKEND_HOST}/graphql`;
+
+// Log para debug
+console.log('🔗 Backend URL:', API_URL);
 
 function Login({ onLogin }) {
   const [formData, setFormData] = useState({

@@ -2,8 +2,21 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import './Dashboard.css';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://192.168.0.19:5001/graphql';
-const API_UPLOAD_URL = 'http://192.168.0.19:5001/api/upload';
+// Determinar el host del backend basándose en el hostname actual
+const getBackendHost = () => {
+  const hostname = window.location.hostname;
+  const protocol = window.location.protocol; // http: o https:
+
+  // Usar el mismo host desde donde se accede, solo cambiar el puerto
+  return `${protocol}//${hostname}:5001`;
+};
+
+const BACKEND_HOST = getBackendHost();
+const API_URL = `${BACKEND_HOST}/graphql`;
+const API_UPLOAD_URL = `${BACKEND_HOST}/api/upload`;
+
+// Log para debug
+console.log('🔗 Backend URL:', API_URL);
 
 function Dashboard({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState('upload');
@@ -20,6 +33,7 @@ function Dashboard({ user, onLogout }) {
   const [myDocuments, setMyDocuments] = useState([]);
   const [loadingPending, setLoadingPending] = useState(false);
   const [loadingMy, setLoadingMy] = useState(false);
+  const [viewingDocument, setViewingDocument] = useState(null);
 
   // Cargar documentos pendientes al montar o cambiar de tab
   useEffect(() => {
@@ -52,6 +66,7 @@ function Dashboard({ user, onLogout }) {
                 id
                 title
                 description
+                filePath
                 uploadedBy {
                   name
                   email
@@ -100,6 +115,7 @@ function Dashboard({ user, onLogout }) {
                 title
                 description
                 fileName
+                filePath
                 fileSize
                 status
                 createdAt
@@ -294,10 +310,30 @@ function Dashboard({ user, onLogout }) {
     }
   };
 
-  const handleViewDocument = (docId) => {
-    // TODO: Implementar visor de PDF
-    console.log('Ver documento:', docId);
-    alert('Funcionalidad de visor de PDF en desarrollo');
+  const handleViewDocument = (doc) => {
+    // Abrir el visor de PDF con el documento seleccionado
+    setViewingDocument(doc);
+  };
+
+  const handleCloseViewer = () => {
+    setViewingDocument(null);
+  };
+
+  const getDocumentUrl = (filePath) => {
+    if (!filePath) return '';
+
+    // Si la ruta comienza con /app/uploads (formato antiguo), convertir a ruta relativa
+    if (filePath.startsWith('/app/uploads/')) {
+      return `${BACKEND_HOST}/uploads/${filePath.replace('/app/uploads/', '')}`;
+    }
+
+    // Si la ruta comienza con uploads/ (formato nuevo), usar directamente
+    if (filePath.startsWith('uploads/')) {
+      return `${BACKEND_HOST}/${filePath}`;
+    }
+
+    // Si no tiene ningún prefijo, asumir que es relativo a uploads/
+    return `${BACKEND_HOST}/uploads/${filePath}`;
   };
 
   const formatDate = (dateString) => {
@@ -601,7 +637,7 @@ function Dashboard({ user, onLogout }) {
                         <div className="document-actions">
                           <button
                             className="action-button action-view"
-                            onClick={() => handleViewDocument(doc.id)}
+                            onClick={() => handleViewDocument(doc)}
                           >
                             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                               <path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -736,7 +772,7 @@ function Dashboard({ user, onLogout }) {
                           <div className="document-actions">
                             <button
                               className="action-button action-view"
-                              onClick={() => handleViewDocument(doc.id)}
+                              onClick={() => handleViewDocument(doc)}
                             >
                               <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -764,6 +800,67 @@ function Dashboard({ user, onLogout }) {
           )}
         </main>
       </div>
+
+      {/* PDF Viewer Modal */}
+      {viewingDocument && (
+        <div className="modal-overlay" onClick={handleCloseViewer}>
+          <div className="modal-content pdf-viewer-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div className="modal-title-section">
+                <h2>{viewingDocument.title}</h2>
+                {viewingDocument.description && (
+                  <p className="modal-description">{viewingDocument.description}</p>
+                )}
+              </div>
+              <button className="modal-close-button" onClick={handleCloseViewer}>
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
+            </div>
+            <div className="modal-body">
+              <object
+                data={getDocumentUrl(viewingDocument.filePath)}
+                type="application/pdf"
+                className="pdf-iframe"
+              >
+                <embed
+                  src={getDocumentUrl(viewingDocument.filePath)}
+                  type="application/pdf"
+                  className="pdf-iframe"
+                />
+                <div className="pdf-fallback">
+                  <p>No se puede mostrar el PDF en este navegador.</p>
+                  <a
+                    href={getDocumentUrl(viewingDocument.filePath)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="action-button action-download"
+                  >
+                    Descargar PDF para ver
+                  </a>
+                </div>
+              </object>
+            </div>
+            <div className="modal-footer">
+              <a
+                href={getDocumentUrl(viewingDocument.filePath)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="action-button action-download"
+              >
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15M7 10L12 15M12 15L17 10M12 15V3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                Descargar PDF
+              </a>
+              <button className="action-button action-close" onClick={handleCloseViewer}>
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

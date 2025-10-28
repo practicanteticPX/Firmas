@@ -154,7 +154,7 @@ docker exec -it firmas_server npm run db:init
 
 #### 4. Usar el Dashboard:
 
-1. Ir a `http://192.168.0.19:5173`
+1. Ir a `http://192.168.0.30:5173`
 2. Iniciar sesión
 3. Ver el Dashboard con 2 pestañas:
    - **Subir Documento**: Arrastra un PDF aquí

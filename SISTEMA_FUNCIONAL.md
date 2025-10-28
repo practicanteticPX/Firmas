@@ -163,8 +163,8 @@ docker-compose up -d
 
 Esto levantará:
 - PostgreSQL en puerto 5432 (datos en `./bd/`)
-- Backend en `http://192.168.0.19:5001`
-- Frontend en `http://192.168.0.19:5173`
+- Backend en `http://192.168.0.30:5001`
+- Frontend en `http://192.168.0.30:5173`
 
 ### 3. Verificar Servicios
 
@@ -181,7 +181,7 @@ docker-compose logs -f frontend
 
 ### 4. Acceder al Sistema
 
-1. Abrir navegador en `http://192.168.0.19:5173`
+1. Abrir navegador en `http://192.168.0.30:5173`
 2. Login con credenciales de Active Directory
 3. Dashboard se carga automáticamente
 
@@ -191,14 +191,14 @@ docker-compose logs -f frontend
 
 ### Backend (puerto 5001)
 
-- **GraphQL**: `http://192.168.0.19:5001/graphql`
-- **Upload**: `http://192.168.0.19:5001/api/upload`
-- **Files**: `http://192.168.0.19:5001/uploads/[filename]`
-- **Health**: `http://192.168.0.19:5001/health`
+- **GraphQL**: `http://192.168.0.30:5001/graphql`
+- **Upload**: `http://192.168.0.30:5001/api/upload`
+- **Files**: `http://192.168.0.30:5001/uploads/[filename]`
+- **Health**: `http://192.168.0.30:5001/health`
 
 ### Frontend (puerto 5173)
 
-- **App**: `http://192.168.0.19:5173`
+- **App**: `http://192.168.0.30:5173`
 
 ---
 
@@ -361,7 +361,7 @@ docker-compose restart postgres-db
 ### Error: GraphQL no responde
 
 1. Verificar que el backend está corriendo
-2. Abrir `http://192.168.0.19:5001/health`
+2. Abrir `http://192.168.0.30:5001/health`
 3. Verificar configuración de CORS en server.js
 4. Ver logs: `docker-compose logs backend`
 

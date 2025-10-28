@@ -342,11 +342,14 @@ const resolvers = {
       // Eliminar archivo físico
       const fs = require('fs');
       const path = require('path');
-      const filePath = path.join(__dirname, '..', doc.file_path);
+      // file_path ya incluye 'uploads/', así que lo quitamos para construir la ruta correcta
+      const relativePath = doc.file_path.replace(/^uploads\//, '');
+      const filePath = path.join(__dirname, '..', 'uploads', relativePath);
 
       try {
         if (fs.existsSync(filePath)) {
           fs.unlinkSync(filePath);
+          console.log(`🗑️ Archivo eliminado: ${filePath}`);
         }
       } catch (err) {
         console.error('Error al eliminar archivo:', err);

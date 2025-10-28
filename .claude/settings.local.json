@@ -16,7 +16,9 @@
       "Bash(docker exec:*)",
       "Bash(docker-compose ps:*)",
       "Bash(docker-compose restart:*)",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(docker-compose exec:*)",
+      "Bash(curl:*)"
     ],
     "deny": [],
     "ask": []
