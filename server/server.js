@@ -53,7 +53,7 @@ async function startServer() {
     : [
         'http://firmapro.com:5173',
         'http://www.firmapro.com:5173',
-        'http://192.168.0.30:5173',
+        'http://192.168.0.19:5173',
         'http://localhost:5173'
       ];
 
@@ -76,12 +76,27 @@ async function startServer() {
   app.use(express.json());
 
   // Servir archivos estáticos de la carpeta uploads con headers apropiados para PDFs
+  // IMPORTANTE: Esto debe ir ANTES del middleware de UTF-8 para que no se sobrescriban los headers
   app.use('/uploads', (req, res, next) => {
     // Permitir que los PDFs se muestren en iframes del frontend
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     res.setHeader('Cross-Origin-Embedder-Policy', 'unsafe-none');
+    // No establecer Content-Type aquí, express.static lo manejará correctamente
     next();
   }, express.static(path.join(__dirname, 'uploads')));
+
+  // Middleware para forzar UTF-8 solo en respuestas JSON (NO en archivos estáticos)
+  app.use((req, res, next) => {
+    // Solo aplicar UTF-8 si la ruta no es /uploads (archivos estáticos)
+    if (!req.path.startsWith('/uploads')) {
+      const originalJson = res.json;
+      res.json = function(data) {
+        res.setHeader('Content-Type', 'application/json; charset=utf-8');
+        return originalJson.call(this, data);
+      };
+    }
+    next();
+  });
 
   // Rutas REST para subida de archivos
   app.use('/api', uploadRoutes);
@@ -134,8 +149,8 @@ async function startServer() {
 
   // Iniciar servidor
   app.listen(PORT, () => {
-    console.log(`🚀 Servidor corriendo en http://192.168.0.30:${PORT}`);
-    console.log(`📊 GraphQL disponible en http://192.168.0.30:${PORT}${server.graphqlPath}`);
+    console.log(`🚀 Servidor corriendo en http://192.168.0.19:${PORT}`);
+    console.log(`📊 GraphQL disponible en http://192.168.0.19:${PORT}${server.graphqlPath}`);
     console.log(`🔐 Autenticación Active Directory configurada`);
     console.log(`   - Host: ${process.env.AD_HOSTNAME || 'No configurado'}`);
     console.log(`   - Protocol: ${process.env.AD_PROTOCOL || 'ldap'}`);

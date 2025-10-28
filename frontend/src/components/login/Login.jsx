@@ -106,8 +106,8 @@ function Login({ onLogin }) {
                 </svg>
               </div>
             </div>
-            <h1>Bienvenido</h1>
-            <p className="subtitle">Sistema de Firmas Digitales Prexxa</p>
+            <h1>FirmaPRO</h1>
+            <p className="subtitle">Hecho por Jesús Y Esteban TIC</p>
           </div>
 
           <form onSubmit={handleSubmit} className="login-form">
@@ -201,7 +201,7 @@ function Login({ onLogin }) {
 
           <div className="login-footer">
             <p className="help-text">
-              ¿Necesitas ayuda? <a href="mailto:soporte@prexxa.com.co">Contacta soporte</a>
+              ¿Necesitas ayuda? <a href="https://soporteprexxa.com/glpi/index.php?noAUTO=1">Contacta soporte</a>
             </p>
           </div>
         </div>

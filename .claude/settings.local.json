@@ -18,7 +18,14 @@
       "Bash(docker-compose restart:*)",
       "Bash(dir:*)",
       "Bash(docker-compose exec:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(node fix-encoding.js:*)",
+      "Bash(node -p:*)",
+      "Bash(node fix-all-encoding.js)",
+      "Bash(node:*)",
+      "Bash(taskkill:*)",
+      "Bash(docker --version:*)",
+      "Bash(del Dashboard.jsx)"
     ],
     "deny": [],
     "ask": []

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import Login from './components/login/Login.jsx'
-import Dashboard from './components/dashboard/Dashboard-funcional.jsx'
+import Dashboard from './components/dashboard/Dashboard.jsx'
 import './App.css'
 
 function App() {

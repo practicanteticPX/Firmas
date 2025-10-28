@@ -140,7 +140,7 @@ const resolvers = {
     register: async (_, { name, email, password }) => {
       const existingUser = users.find(u => u.email === email);
       if (existingUser) {
-        throw new Error('El email ya est� registrado');
+        throw new Error('El email ya está registrado');
       }
 
       const hashedPassword = await bcrypt.hash(password, 10);

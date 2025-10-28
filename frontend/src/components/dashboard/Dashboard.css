@@ -1,4 +1,4 @@
-/* Dashboard Container */
+﻿/* Dashboard Container */
 .dashboard-container {
   position: fixed;
   top: 0;
@@ -78,7 +78,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
   animation: slideDown 0.5s ease-out;
 }
 
@@ -392,8 +392,10 @@
 }
 
 .form-textarea {
+  width: 95%;
   resize: vertical;
   min-height: 80px;
+  text-indent: 0;
 }
 
 /* File Drop Zone */
@@ -737,7 +739,8 @@
   line-height: 1.4;
 }
 
-.document-title {
+#document-title {
+  width: 95%;
   font-size: 16px;
   font-weight: 600;
   color: #1a1a1a;
@@ -828,7 +831,7 @@
   transform: translateY(-2px);
 }
 
-/* Estilos específicos para botones de acción en documentos */
+/* Estilos especÃ­ficos para botones de acciÃ³n en documentos */
 .action-view {
   background: rgba(59, 130, 246, 0.1);
   color: #3b82f6;
@@ -962,6 +965,7 @@
 }
 
 .document-description {
+  width: 90%;
   font-size: 13px;
   color: #666;
   margin: 8px 0;
@@ -1252,7 +1256,7 @@
   height: 90vh;
 }
 
-/* Modal tipo tarjeta (gestión de firmantes y confirmación) */
+/* Modal tipo tarjeta (gestiÃ³n de firmantes y confirmaciÃ³n) */
 .signers-modal-content {
   background: #ffffff;
   border: 1px solid #E5E7EB;
@@ -2254,7 +2258,7 @@
 }
 
 /* ========================================
-   PENDIENTES DE FIRMA - DISEÑO MODERNO
+   PENDIENTES DE FIRMA - DISEÃ‘O MODERNO
    ======================================== */
 
 .pending-section-modern {
@@ -2286,7 +2290,7 @@
   margin-bottom: 0;
 }
 
-/* Sección izquierda - Icono PDF e info del documento */
+/* SecciÃ³n izquierda - Icono PDF e info del documento */
 .pending-left {
   display: flex;
   align-items: flex-start;
@@ -2295,7 +2299,7 @@
   min-width: 0;
 }
 
-/* Sección central - Información del remitente */
+/* SecciÃ³n central - InformaciÃ³n del remitente */
 .pending-center {
   display: flex;
   align-items: center;
@@ -2352,7 +2356,7 @@
   text-overflow: ellipsis;
 }
 
-/* Sección derecha - Estado y acciones */
+/* SecciÃ³n derecha - Estado y acciones */
 .pending-right {
   display: flex;
   flex-direction: column;
@@ -2379,7 +2383,7 @@
   font-size: 14px;
 }
 
-/* Botones de acción para pendientes */
+/* Botones de acciÃ³n para pendientes */
 .btn-view-pending {
   border-color: #3B82F6 !important;
   color: #3B82F6 !important;
@@ -2482,7 +2486,7 @@
 }
 
 /* ========================================
-   DOCUMENTOS FIRMADOS - DISEÑO MODERNO
+   DOCUMENTOS FIRMADOS - DISEÃ‘O MODERNO
    ======================================== */
 
 .signed-section-modern {
@@ -2514,7 +2518,7 @@
   margin-bottom: 0;
 }
 
-/* Sección izquierda - Icono PDF e info del documento */
+/* SecciÃ³n izquierda - Icono PDF e info del documento */
 .signed-left {
   display: flex;
   align-items: flex-start;
@@ -2523,7 +2527,7 @@
   min-width: 0;
 }
 
-/* Sección central - Información del remitente */
+/* SecciÃ³n central - InformaciÃ³n del remitente */
 .signed-center {
   display: flex;
   align-items: center;
@@ -2534,7 +2538,7 @@
   border-right: 1px solid #F3F4F6;
 }
 
-/* Sección derecha - Estado y acciones */
+/* SecciÃ³n derecha - Estado y acciones */
 .signed-right {
   display: flex;
   flex-direction: column;
@@ -2566,7 +2570,7 @@
   font-weight: 500;
 }
 
-/* Botón de acción para documentos firmados */
+/* BotÃ³n de acciÃ³n para documentos firmados */
 .btn-view-signed {
   border-color: #10B981 !important;
   color: #10B981 !important;
@@ -2577,7 +2581,7 @@
   border-color: #059669 !important;
 }
 
-/* Badge de éxito en la navegación */
+/* Badge de Ã©xito en la navegaciÃ³n */
 .badge-success {
   background: #10B981;
   color: white;
@@ -2643,5 +2647,1102 @@
 
   .btn-icon-modern {
     flex: 1;
+  }
+}
+
+/* ========================================
+   ESTILOS PROFESIONALES - DOCUMENTOS FIRMADOS
+   ======================================== */
+
+/* Tarjeta de documento firmado con efecto especial */
+.doc-card-signed {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.doc-card-signed::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.1), transparent);
+  transition: left 0.6s ease;
+}
+
+.doc-card-signed:hover::before {
+  left: 100%;
+}
+
+.doc-card-signed:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px rgba(16, 185, 129, 0.15);
+  border-color: #10B981;
+}
+
+/* Sección central de información de firma - Diseño Profesional */
+.signed-info-center {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+  text-align: center;
+  padding: 24px 20px;
+  background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%);
+  border-radius: 16px;
+  border: 2px solid #10B981;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.15);
+  transition: all 0.3s ease;
+}
+
+.signed-info-center::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.1) 0%, transparent 70%);
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+.signed-info-center:hover {
+  transform: scale(1.02);
+  box-shadow: 0 12px 32px rgba(16, 185, 129, 0.25);
+}
+
+/* Badge grande y elegante */
+.signed-badge-large {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 28px;
+  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+  position: relative;
+  z-index: 1;
+  transition: all 0.3s ease;
+  animation: badge-entrance 0.6s ease-out;
+}
+
+@keyframes badge-entrance {
+  0% {
+    opacity: 0;
+    transform: scale(0.8) translateY(-20px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.signed-badge-large:hover {
+  transform: scale(1.05);
+  box-shadow: 0 12px 28px rgba(16, 185, 129, 0.5);
+}
+
+.signed-check-icon {
+  width: 28px;
+  height: 28px;
+  color: white;
+  flex-shrink: 0;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+  animation: check-pulse 2s ease-in-out infinite;
+}
+
+@keyframes check-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.15);
+  }
+}
+
+.signed-label {
+  font-size: 16px;
+  font-weight: 700;
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Información de fecha y usuario - Diseño mejorado */
+.signed-date-info,
+.signed-by-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: white;
+  border-radius: 12px;
+  font-size: 13px;
+  color: #374151;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  position: relative;
+  z-index: 1;
+  transition: all 0.3s ease;
+}
+
+.signed-date-info:hover,
+.signed-by-info:hover {
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.calendar-icon,
+.user-icon {
+  width: 18px;
+  height: 18px;
+  color: #10B981;
+  flex-shrink: 0;
+  transition: transform 0.3s ease;
+}
+
+.signed-date-info:hover .calendar-icon,
+.signed-by-info:hover .user-icon {
+  transform: scale(1.2) rotate(5deg);
+}
+
+/* Botones de acción elegantes - Diseño vertical */
+.actions-modern-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.btn-action-elegant {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 20px;
+  border: 2px solid #E5E7EB;
+  border-radius: 12px;
+  background: white;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-action-elegant::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.4s ease, height 0.4s ease;
+}
+
+.btn-action-elegant:hover::before {
+  width: 300px;
+  height: 300px;
+}
+
+.btn-action-elegant svg {
+  width: 20px;
+  height: 20px;
+  transition: transform 0.3s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.btn-action-elegant span {
+  position: relative;
+  z-index: 1;
+}
+
+.btn-action-elegant:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.btn-action-elegant:hover svg {
+  transform: scale(1.15);
+}
+
+/* Botón Ver - Azul */
+.btn-view-elegant {
+  border-color: #3B82F6;
+  color: #3B82F6;
+}
+
+.btn-view-elegant::before {
+  background: #3B82F6;
+}
+
+.btn-view-elegant:hover {
+  border-color: #2563EB;
+  color: white;
+  background: #3B82F6;
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.4);
+}
+
+/* Botón Descargar - Verde */
+.btn-download-elegant {
+  border-color: #10B981;
+  color: #10B981;
+}
+
+.btn-download-elegant::before {
+  background: #10B981;
+}
+
+.btn-download-elegant:hover {
+  border-color: #059669;
+  color: white;
+  background: #10B981;
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
+}
+
+/* Animación de entrada para las tarjetas */
+@keyframes card-slide-in {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.doc-card-signed {
+  animation: card-slide-in 0.5s ease-out backwards;
+}
+
+.doc-card-signed:nth-child(1) { animation-delay: 0.1s; }
+.doc-card-signed:nth-child(2) { animation-delay: 0.2s; }
+.doc-card-signed:nth-child(3) { animation-delay: 0.3s; }
+.doc-card-signed:nth-child(4) { animation-delay: 0.4s; }
+.doc-card-signed:nth-child(5) { animation-delay: 0.5s; }
+
+/* Responsive mejorado */
+@media (max-width: 1024px) {
+  .signed-info-center {
+    padding: 20px 16px;
+  }
+
+  .signed-badge-large {
+    padding: 12px 24px;
+  }
+
+  .signed-label {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 768px) {
+  .signed-info-center {
+    padding: 16px 12px;
+    gap: 12px;
+  }
+
+  .signed-badge-large {
+    padding: 10px 20px;
+    gap: 8px;
+  }
+
+  .signed-check-icon {
+    width: 24px;
+    height: 24px;
+  }
+
+  .signed-label {
+    font-size: 13px;
+    letter-spacing: 0.8px;
+  }
+
+  .signed-date-info,
+  .signed-by-info {
+    font-size: 12px;
+    padding: 8px 12px;
+  }
+
+  .actions-modern-vertical {
+    gap: 8px;
+  }
+
+  .btn-action-elegant {
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+}
+
+/* ========================================
+   ESTILO ZAPSIGN - SUBIR DOCUMENTO
+   ======================================== */
+
+/* Sección principal Upload */
+.upload-section-zapsign {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px;
+}
+
+/* Stepper numerado horizontal */
+.zapsign-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 48px;
+  padding: 24px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.stepper-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  max-width: 200px;
+}
+
+.stepper-item.active .stepper-circle {
+  background: #2563EB;
+  color: white;
+  border-color: #2563EB;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  transform: scale(1.1);
+}
+
+.stepper-item.active .stepper-label {
+  color: #2563EB;
+  font-weight: 600;
+}
+
+.stepper-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: white;
+  border: 3px solid #E5E7EB;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 700;
+  color: #9CA3AF;
+  transition: all 0.3s ease;
+}
+
+.stepper-label {
+  font-size: 14px;
+  color: #6B7280;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.stepper-line {
+  flex: 1;
+  height: 3px;
+  background: #E5E7EB;
+  margin: 0 16px;
+  max-width: 120px;
+}
+
+/* Card principal de contenido */
+.zapsign-content-card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+/* Header del card */
+.zapsign-header {
+  padding: 32px;
+  border-bottom: 1px solid #E5E7EB;
+}
+
+.zapsign-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 28px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 20px;
+}
+
+.help-button-zapsign {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: transparent;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #2563EB;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.help-button-zapsign svg {
+  width: 20px;
+  height: 20px;
+}
+
+.help-button-zapsign:hover {
+  background: #EFF6FF;
+  border-color: #2563EB;
+}
+
+.folder-selector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #F9FAFB;
+  border-radius: 8px;
+}
+
+.folder-selector svg {
+  width: 20px;
+  height: 20px;
+  color: #6B7280;
+}
+
+.folder-selector span {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.change-folder-btn {
+  margin-left: auto;
+  padding: 6px 14px;
+  background: white;
+  border: 1px solid #D1D5DB;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.change-folder-btn:hover {
+  background: #F3F4F6;
+  border-color: #9CA3AF;
+}
+
+/* Formulario */
+.zapsign-upload-form {
+  padding: 32px;
+}
+
+.zapsign-section {
+  margin-bottom: 32px;
+}
+
+.section-question {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 20px;
+}
+
+/* Área de upload */
+.zapsign-upload-area {
+  background: #F9FAFB;
+  border: 2px dashed #D1D5DB;
+  border-radius: 12px;
+  padding: 48px 32px;
+  text-align: center;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.zapsign-upload-area.dragging {
+  background: #EFF6FF;
+  border-color: #2563EB;
+  border-style: solid;
+}
+
+.zapsign-upload-area.has-files {
+  padding: 24px;
+  background: white;
+  border-color: #10B981;
+}
+
+.file-input-hidden {
+  display: none;
+}
+
+.zapsign-upload-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  cursor: pointer;
+}
+
+.upload-icon-circle {
+  width: 72px;
+  height: 72px;
+  background: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.upload-icon-circle svg {
+  width: 32px;
+  height: 32px;
+  color: #2563EB;
+}
+
+.upload-text-primary {
+  font-size: 16px;
+  font-weight: 600;
+  color: #2563EB;
+  margin: 0;
+}
+
+/* Mensaje informativo estilo ZapSign */
+.zapsign-info-message {
+  display: flex;
+  gap: 16px;
+  padding: 16px 20px;
+  background: #EFF6FF;
+  border-left: 4px solid #2563EB;
+  border-radius: 8px;
+  margin-top: 20px;
+}
+
+.info-icon-container {
+  flex-shrink: 0;
+}
+
+.info-icon-container svg {
+  width: 24px;
+  height: 24px;
+  color: #2563EB;
+}
+
+.info-message-content p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #1E40AF;
+}
+
+.info-message-content strong {
+  font-weight: 600;
+  color: #1E3A8A;
+}
+
+/* Botón CONTINUAR estilo ZapSign */
+.zapsign-continue-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  padding: 16px 32px;
+  background: #2563EB;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 32px;
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.3);
+}
+
+.zapsign-continue-button:hover:not(:disabled) {
+  background: #1D4ED8;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.4);
+}
+
+.zapsign-continue-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.zapsign-continue-button:disabled {
+  background: #D1D5DB;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.zapsign-continue-button svg {
+  width: 24px;
+  height: 24px;
+  transition: transform 0.3s ease;
+}
+
+.zapsign-continue-button:hover:not(:disabled) svg {
+  transform: translateX(4px);
+}
+
+/* Responsive ZapSign */
+@media (max-width: 1024px) {
+  .zapsign-stepper {
+    padding: 20px 16px;
+  }
+
+  .stepper-item {
+    max-width: 150px;
+  }
+
+  .stepper-circle {
+    width: 42px;
+    height: 42px;
+    font-size: 18px;
+  }
+
+  .stepper-label {
+    font-size: 12px;
+  }
+
+  .stepper-line {
+    max-width: 80px;
+  }
+}
+
+@media (max-width: 768px) {
+  .upload-section-zapsign {
+    padding: 16px;
+  }
+
+  .zapsign-stepper {
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .stepper-line {
+    display: none;
+  }
+
+  .stepper-item {
+    flex: 0 0 calc(50% - 8px);
+    max-width: none;
+  }
+
+  .zapsign-header {
+    padding: 24px 20px;
+  }
+
+  .zapsign-title {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    font-size: 24px;
+  }
+
+  .help-button-zapsign {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .zapsign-upload-form {
+    padding: 20px;
+  }
+
+  .section-question {
+    font-size: 16px;
+  }
+
+  .zapsign-upload-area {
+    padding: 32px 20px;
+  }
+}
+
+/* Tarjeta de resumen - Paso 3 */
+.summary-card {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px;
+  background: #F9FAFB;
+  border-radius: 12px;
+  border: 1px solid #E5E7EB;
+}
+
+.summary-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.summary-icon {
+  width: 40px;
+  height: 40px;
+  color: #2563EB;
+  flex-shrink: 0;
+}
+
+.summary-item div h4 {
+  margin: 0 0 4px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.summary-item div p {
+  margin: 0;
+  font-size: 14px;
+  color: #6B7280;
+}
+
+/* ========================================
+   LISTA DE ARCHIVOS MEJORADA
+   ======================================== */
+
+.file-list-container {
+  margin-top: 16px;
+  border: 2px dashed #D1D5DB;
+  border-radius: 12px;
+  padding: 16px;
+  background: #F9FAFB;
+}
+
+.file-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #E5E7EB;
+}
+
+.file-list-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.file-count-badge {
+  background: #3B82F6;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.file-list-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.file-list-action-btn {
+  padding: 6px 12px;
+  border: 1px solid #D1D5DB;
+  background: white;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.file-list-action-btn:hover:not(:disabled) {
+  background: #F3F4F6;
+  border-color: #9CA3AF;
+}
+
+.file-list-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.file-list-action-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.file-list-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.file-list-item {
+  background: white;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.2s ease;
+  cursor: move;
+}
+
+.file-list-item:hover {
+  border-color: #3B82F6;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+}
+
+.file-list-item.dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+}
+
+.file-list-item.drag-over {
+  border-color: #3B82F6;
+  background: #EFF6FF;
+}
+
+.file-drag-handle {
+  color: #9CA3AF;
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  padding: 4px;
+}
+
+.file-drag-handle:active {
+  cursor: grabbing;
+}
+
+.file-drag-handle svg {
+  width: 20px;
+  height: 20px;
+}
+
+.file-list-item-number {
+  background: #E5E7EB;
+  color: #374151;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.file-list-item-icon {
+  flex-shrink: 0;
+}
+
+.file-list-item-icon svg {
+  width: 32px;
+  height: 32px;
+  color: #DC2626;
+}
+
+.file-list-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.file-list-item-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #111827;
+  margin: 0 0 4px 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-list-item-meta {
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
+  color: #6B7280;
+}
+
+.file-list-item-size,
+.file-list-item-pages {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.file-list-item-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.file-list-item-btn {
+  padding: 6px;
+  border: 1px solid #E5E7EB;
+  background: white;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.file-list-item-btn:hover {
+  background: #F3F4F6;
+}
+
+.file-list-item-btn.btn-delete:hover {
+  background: #FEE2E2;
+  border-color: #EF4444;
+  color: #DC2626;
+}
+
+.file-list-item-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.file-list-empty {
+  text-align: center;
+  padding: 24px;
+  color: #9CA3AF;
+  font-size: 14px;
+}
+
+/* AnimaciÃ³n para agregar archivos */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.file-list-item {
+  animation: slideInUp 0.3s ease;
+}
+
+/* Checkbox de unificaciÃ³n */
+.unify-checkbox-container {
+  margin-top: 16px;
+  padding: 12px;
+  background: #EFF6FF;
+  border: 1px solid #DBEAFE;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.unify-checkbox-container input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #3B82F6;
+}
+
+.unify-checkbox-label {
+  font-size: 14px;
+  color: #1E40AF;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.unify-checkbox-label svg {
+  width: 16px;
+  height: 16px;
+}
+
+.unify-info-text {
+  font-size: 12px;
+  color: #6B7280;
+  margin-top: 8px;
+  display: flex;
+  align-items: start;
+  gap: 6px;
+}
+
+.unify-info-text svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .file-list-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .file-list-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .file-list-item {
+    padding: 10px;
+    gap: 8px;
+  }
+
+  .file-drag-handle {
+    display: none;
+  }
+
+  .file-list-item-meta {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .file-list-item-name {
+    font-size: 13px;
+  }
+
+  .file-list-item-meta {
+    font-size: 11px;
   }
 }
