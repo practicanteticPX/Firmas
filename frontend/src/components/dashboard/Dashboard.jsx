@@ -1802,11 +1802,11 @@ function Dashboard({ user, onLogout }) {
 
                       const getStatusConfig = (status) => {
                         const statusMap = {
-                          pending: { label: 'Pendiente', color: '#F59E0B', bg: '#FEF3C7', icon: '⏳' },
-                          in_progress: { label: 'En progreso', color: '#3B82F6', bg: '#DBEAFE', icon: '✏️' },
-                          completed: { label: 'Completado', color: '#10B981', bg: '#D1FAE5', icon: '✅' },
-                          rejected: { label: 'Rechazado', color: '#EF4444', bg: '#FEE2E2', icon: '❌' },
-                          archived: { label: 'Archivado', color: '#6B7280', bg: '#F3F4F6', icon: '📦' }
+                          pending: { label: 'Pendiente', color: '#F59E0B', bg: '#FEF3C7' },
+                          in_progress: { label: 'En progreso', color: '#3B82F6', bg: '#DBEAFE' },
+                          completed: { label: 'Completado', color: '#10B981', bg: '#D1FAE5'},
+                          rejected: { label: 'Rechazado', color: '#EF4444', bg: '#FEE2E2' },
+                          archived: { label: 'Archivado', color: '#6B7280', bg: '#F3F4F6' }
                         };
                         return statusMap[status] || statusMap.pending;
                       };
@@ -2152,19 +2152,16 @@ function Dashboard({ user, onLogout }) {
                         <div className="signer-status-badge-modal">
                           {signature.status === 'signed' && (
                             <span className="status-signed">
-                              <span className="status-icon">✅</span>
                               Firmado
                             </span>
                           )}
                           {signature.status === 'pending' && (
                             <span className="status-pending">
-                              <span className="status-icon">⏳</span>
                               Pendiente
                             </span>
                           )}
                           {signature.status === 'rejected' && (
                             <span className="status-rejected">
-                              <span className="status-icon">❌</span>
                               Rechazado
                             </span>
                           )}
