@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>FirmaPRO - Nuevo Documento</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            primary: "#6366F1",
+            "background-light": "#F8FAFC",
+            "background-dark": "#18181B",
+          },
+          fontFamily: {
+            display: ["Poppins", "sans-serif"],
+          },
+          borderRadius: {
+            DEFAULT: "0.75rem",
+          },
+        },
+      },
+    };
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings:
+      'FILL' 0,
+      'wght' 400,
+      'GRAD' 0,
+      'opsz' 24
+    }
+  </style>
+</head>
+<body class="font-display bg-background-light dark:bg-background-dark text-slate-700 dark:text-slate-300 antialiased">
+<div class="flex min-h-screen">
+<aside class="w-64 flex-shrink-0 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col">
+<div class="h-16 flex items-center px-6 border-b border-slate-200 dark:border-slate-800">
+<div class="flex items-center space-x-3">
+<div class="bg-primary/10 p-2 rounded-lg">
+<svg fill="none" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+<path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="#6366F1" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+<path d="M14 2V8H20" stroke="#6366F1" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+<path d="M12 18H8" stroke="#6366F1" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+<path d="M16 14H8" stroke="#6366F1" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+<div>
+<h1 class="font-bold text-lg text-slate-800 dark:text-slate-100">FirmaPRO</h1>
+<p class="text-xs text-slate-500 dark:text-slate-400">Gestión de documentos</p>
+</div>
+</div>
+</div>
+<nav class="flex-grow p-4">
+<ul class="space-y-2">
+<li>
+<a class="bg-primary/10 text-primary flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold" href="#">
+<span class="material-symbols-outlined text-base">upload</span>
+<span>Subir Documento</span>
+</a>
+</li>
+<li>
+<a class="text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-slate-700 dark:hover:text-slate-200 flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors" href="#">
+<span class="material-symbols-outlined text-base">schedule</span>
+<span>Pendientes de Firma</span>
+</a>
+</li>
+<li>
+<a class="text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-slate-700 dark:hover:text-slate-200 flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors" href="#">
+<span class="material-symbols-outlined text-base">task_alt</span>
+<span>Documentos Firmados</span>
+</a>
+</li>
+<li>
+<a class="text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-slate-700 dark:hover:text-slate-200 flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors" href="#">
+<span class="material-symbols-outlined text-base">folder_open</span>
+<span>Mis Documentos</span>
+</a>
+</li>
+</ul>
+</nav>
+</aside>
+<div class="flex-1 flex flex-col">
+<header class="bg-background-light dark:bg-background-dark border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10">
+<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+<div class="flex h-16 items-center justify-end">
+<div class="flex items-center space-x-4">
+<div class="flex items-center space-x-3">
+<div class="flex items-center justify-center h-10 w-10 rounded-full bg-primary text-white font-semibold text-sm">
+                  PT
+                </div>
+<div class="hidden sm:block">
+<p class="font-semibold text-sm text-slate-800 dark:text-slate-100">Practicante TIC</p>
+<p class="text-xs text-slate-500 dark:text-slate-400">user</p>
+</div>
+</div>
+<button class="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors">
+<span class="material-symbols-outlined">logout</span>
+<span class="hidden md:inline">Salir</span>
+</button>
+</div>
+</div>
+</div>
+</header>
+<main class="flex-grow w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+<div class="space-y-8">
+<div class="flex items-center justify-center space-x-2 md:space-x-4">
+<div class="flex items-center space-x-2">
+<div class="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-white text-xs font-bold">1</div>
+<span class="text-sm font-medium text-primary">Cargar documentos</span>
+</div>
+<div class="flex-1 h-px bg-slate-200 dark:bg-slate-700"></div>
+<div class="flex items-center space-x-2 opacity-50">
+<div class="flex items-center justify-center w-6 h-6 rounded-full bg-slate-300 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-bold">2</div>
+<span class="text-sm font-medium text-slate-500 dark:text-slate-400">Añadir firmantes</span>
+</div>
+<div class="flex-1 h-px bg-slate-200 dark:bg-slate-700"></div>
+<div class="flex items-center space-x-2 opacity-50">
+<div class="flex items-center justify-center w-6 h-6 rounded-full bg-slate-300 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-bold">3</div>
+<span class="text-sm font-medium text-slate-500 dark:text-slate-400">Enviar</span>
+</div>
+</div>
+<div class="bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm max-w-2xl mx-auto">
+<div class="p-6 sm:p-8 space-y-8">
+<div class="flex justify-between items-start">
+<div>
+<h2 class="text-2xl font-bold text-slate-900 dark:text-slate-50">Nuevo documento</h2>
+<p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Completa los detalles y sube tu archivo para firmar.</p>
+</div>
+<button class="flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors py-1 px-2 rounded-md">
+<span class="material-symbols-outlined text-base">help_outline</span>
+<span>Necesito ayuda</span>
+</button>
+</div>
+<div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg flex justify-between items-center">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-slate-500 dark:text-slate-400">folder_open</span>
+<span class="text-sm font-medium text-slate-700 dark:text-slate-200">Documentos</span>
+</div>
+<button class="text-sm font-semibold text-primary hover:text-primary/80 transition-colors">Cambiar carpeta</button>
+</div>
+<div class="space-y-6">
+<div>
+<label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5" for="set-name">Nombre del conjunto <span class="text-slate-400 dark:text-slate-500">(opcional)</span></label>
+<input class="block w-full rounded-lg border-slate-300 dark:border-slate-700 bg-transparent dark:bg-slate-800/50 shadow-sm focus:border-primary focus:ring-primary text-sm dark:placeholder:text-slate-500" id="set-name" placeholder="Ej: Contrato de servicios 2024 (conjunto)" type="text"/>
+</div>
+<div>
+<label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5" for="description">Descripción <span class="text-slate-400 dark:text-slate-500">(opcional)</span></label>
+<textarea class="block w-full rounded-lg border-slate-300 dark:border-slate-700 bg-transparent dark:bg-slate-800/50 shadow-sm focus:border-primary focus:ring-primary text-sm dark:placeholder:text-slate-500" id="description" placeholder="Describe brevemente el documento..." rows="3"></textarea>
+</div>
+<div>
+<label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">¿Qué documento se firmará?</label>
+<div class="mt-2 flex justify-center rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-700 px-6 py-10 hover:border-primary dark:hover:border-primary transition-colors cursor-pointer bg-slate-50/50 dark:bg-slate-800/20">
+<div class="text-center">
+<div class="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-primary/10">
+<span class="material-symbols-outlined text-primary">upload_file</span>
+</div>
+<div class="mt-4 flex text-sm leading-6 text-slate-600 dark:text-slate-400">
+<label class="relative cursor-pointer rounded-md font-semibold text-primary focus-within:outline-none focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 dark:focus-within:ring-offset-background-dark hover:text-primary/80" for="file-upload">
+<span>Sube un archivo</span>
+<input class="sr-only" id="file-upload" name="file-upload" type="file"/>
+</label>
+<p class="pl-1">o arrástralo y suéltalo</p>
+</div>
+<p class="text-xs leading-5 text-slate-500 dark:text-slate-500">PDF, DOCX, PNG, JPG hasta 10MB</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="bg-slate-50 dark:bg-slate-800/50 px-6 py-4 rounded-b-xl flex items-center justify-between">
+<button class="text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-slate-100 transition-colors">Atrás</button>
+<button class="bg-primary hover:bg-primary/90 text-white font-semibold py-2.5 px-6 rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-slate-900">
+                  Continuar
+                </button>
+</div>
+</div>
+</div>
+</main>
+</div>
+</div>
+
+</body></html>

@@ -1,4 +1,4 @@
-﻿/* Dashboard Container */
+/* Dashboard Container */
 .dashboard-container {
   position: fixed;
   top: 0;
@@ -72,14 +72,15 @@
 
 /* Header */
 .dashboard-header {
-  background: rgba(255, 255, 255, 0.98);
-  backdrop-filter: blur(20px);
+  background: white;
   padding: 16px 32px;
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-  animation: slideDown 0.5s ease-out;
+  border-bottom: 1px solid #E5E7EB;
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 @keyframes slideDown {
@@ -94,9 +95,7 @@
 }
 
 .header-left {
-  display: flex;
-  align-items: center;
-  gap: 14px;
+  display: none;
 }
 
 .logo {
@@ -831,7 +830,7 @@
   transform: translateY(-2px);
 }
 
-/* Estilos especÃ­ficos para botones de acciÃ³n en documentos */
+/* Estilos específicos para botones de acción en documentos */
 .action-view {
   background: rgba(59, 130, 246, 0.1);
   color: #3b82f6;
@@ -1256,7 +1255,7 @@
   height: 90vh;
 }
 
-/* Modal tipo tarjeta (gestiÃ³n de firmantes y confirmaciÃ³n) */
+/* Modal tipo tarjeta (gestión de firmantes y confirmación) */
 .signers-modal-content {
   background: #ffffff;
   border: 1px solid #E5E7EB;
@@ -1777,6 +1776,11 @@
   margin-bottom: 4px;
 }
 
+.meta-date,
+.meta-size {
+  color: #6B7280;
+}
+
 .meta-dot {
   color: #D1D5DB;
 }
@@ -2258,7 +2262,7 @@
 }
 
 /* ========================================
-   PENDIENTES DE FIRMA - DISEÃ‘O MODERNO
+   PENDIENTES DE FIRMA - DISEÑO MODERNO
    ======================================== */
 
 .pending-section-modern {
@@ -2290,7 +2294,7 @@
   margin-bottom: 0;
 }
 
-/* SecciÃ³n izquierda - Icono PDF e info del documento */
+/* Sección izquierda - Icono PDF e info del documento */
 .pending-left {
   display: flex;
   align-items: flex-start;
@@ -2299,7 +2303,7 @@
   min-width: 0;
 }
 
-/* SecciÃ³n central - InformaciÃ³n del remitente */
+/* Sección central - Información del remitente */
 .pending-center {
   display: flex;
   align-items: center;
@@ -2356,7 +2360,7 @@
   text-overflow: ellipsis;
 }
 
-/* SecciÃ³n derecha - Estado y acciones */
+/* Sección derecha - Estado y acciones */
 .pending-right {
   display: flex;
   flex-direction: column;
@@ -2383,7 +2387,7 @@
   font-size: 14px;
 }
 
-/* Botones de acciÃ³n para pendientes */
+/* Botones de acción para pendientes */
 .btn-view-pending {
   border-color: #3B82F6 !important;
   color: #3B82F6 !important;
@@ -2486,7 +2490,7 @@
 }
 
 /* ========================================
-   DOCUMENTOS FIRMADOS - DISEÃ‘O MODERNO
+   DOCUMENTOS FIRMADOS - DISEÑO MODERNO
    ======================================== */
 
 .signed-section-modern {
@@ -2518,7 +2522,7 @@
   margin-bottom: 0;
 }
 
-/* SecciÃ³n izquierda - Icono PDF e info del documento */
+/* Sección izquierda - Icono PDF e info del documento */
 .signed-left {
   display: flex;
   align-items: flex-start;
@@ -2527,7 +2531,7 @@
   min-width: 0;
 }
 
-/* SecciÃ³n central - InformaciÃ³n del remitente */
+/* Sección central - Información del remitente */
 .signed-center {
   display: flex;
   align-items: center;
@@ -2538,7 +2542,7 @@
   border-right: 1px solid #F3F4F6;
 }
 
-/* SecciÃ³n derecha - Estado y acciones */
+/* Sección derecha - Estado y acciones */
 .signed-right {
   display: flex;
   flex-direction: column;
@@ -2570,7 +2574,7 @@
   font-weight: 500;
 }
 
-/* BotÃ³n de acciÃ³n para documentos firmados */
+/* Botón de acción para documentos firmados */
 .btn-view-signed {
   border-color: #10B981 !important;
   color: #10B981 !important;
@@ -2581,7 +2585,7 @@
   border-color: #059669 !important;
 }
 
-/* Badge de Ã©xito en la navegaciÃ³n */
+/* Badge de éxito en la navegación */
 .badge-success {
   background: #10B981;
   color: white;
@@ -2683,7 +2687,7 @@
   border-color: #10B981;
 }
 
-/* Sección central de información de firma - Diseño Profesional */
+/* Secci�n central de informaci�n de firma - Dise�o Profesional */
 .signed-info-center {
   display: flex;
   flex-direction: column;
@@ -2785,7 +2789,7 @@
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-/* Información de fecha y usuario - Diseño mejorado */
+/* Informaci�n de fecha y usuario - Dise�o mejorado */
 .signed-date-info,
 .signed-by-info {
   display: flex;
@@ -2823,7 +2827,7 @@
   transform: scale(1.2) rotate(5deg);
 }
 
-/* Botones de acción elegantes - Diseño vertical */
+/* Botones de acci�n elegantes - Dise�o vertical */
 .actions-modern-vertical {
   display: flex;
   flex-direction: column;
@@ -2888,7 +2892,7 @@
   transform: scale(1.15);
 }
 
-/* Botón Ver - Azul */
+/* Bot�n Ver - Azul */
 .btn-view-elegant {
   border-color: #3B82F6;
   color: #3B82F6;
@@ -2905,7 +2909,7 @@
   box-shadow: 0 8px 24px rgba(59, 130, 246, 0.4);
 }
 
-/* Botón Descargar - Verde */
+/* Bot�n Descargar - Verde */
 .btn-download-elegant {
   border-color: #10B981;
   color: #10B981;
@@ -2922,7 +2926,7 @@
   box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
 }
 
-/* Animación de entrada para las tarjetas */
+/* Animaci�n de entrada para las tarjetas */
 @keyframes card-slide-in {
   0% {
     opacity: 0;
@@ -3000,11 +3004,12 @@
    ESTILO ZAPSIGN - SUBIR DOCUMENTO
    ======================================== */
 
-/* Sección principal Upload */
+/* Secci�n principal Upload */
 .upload-section-zapsign {
-  max-width: 1200px;
+  width: 150vw;
   margin: 0 auto;
   padding: 32px;
+  z-index: 9999999999999999999999999999999999999999999999999999999999;
 }
 
 /* Stepper numerado horizontal */
@@ -3077,6 +3082,8 @@
   border-radius: 16px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
   overflow: hidden;
+  width: 150%;
+  z-index: 99999999999999999999999999999999;
 }
 
 /* Header del card */
@@ -3160,7 +3167,9 @@
 
 /* Formulario */
 .zapsign-upload-form {
+  width: 100%;
   padding: 32px;
+  z-index: 999999999999;
 }
 
 .zapsign-section {
@@ -3174,7 +3183,7 @@
   margin-bottom: 20px;
 }
 
-/* Área de upload */
+/* �rea de upload */
 .zapsign-upload-area {
   background: #F9FAFB;
   border: 2px dashed #D1D5DB;
@@ -3266,7 +3275,7 @@
   color: #1E3A8A;
 }
 
-/* Botón CONTINUAR estilo ZapSign */
+/* Bot�n CONTINUAR estilo ZapSign */
 .zapsign-continue-button {
   display: flex;
   align-items: center;
@@ -3644,7 +3653,7 @@
   font-size: 14px;
 }
 
-/* AnimaciÃ³n para agregar archivos */
+/* Animación para agregar archivos */
 @keyframes slideInUp {
   from {
     opacity: 0;
@@ -3660,7 +3669,7 @@
   animation: slideInUp 0.3s ease;
 }
 
-/* Checkbox de unificaciÃ³n */
+/* Checkbox de unificación */
 .unify-checkbox-container {
   margin-top: 16px;
   padding: 12px;
@@ -3744,5 +3753,1359 @@
 
   .file-list-item-meta {
     font-size: 11px;
+  }
+}
+
+/* ===== Reference UI: Left Sidebar (visual only) ===== */
+.ds-shell { display: flex; }
+.ds-aside { width: 240px; border-right: 1px solid #E5E7EB; background: #fff; position: sticky; top: 0; height: 100vh; padding: 20px 16px; }
+.ds-aside-header { display:flex; align-items:center; gap:12px; height:56px; padding: 0 8px; border-bottom: 1px solid #E5E7EB; margin-bottom: 16px; }
+.ds-aside .logo {
+  width: 40px;
+  height: 40px;
+  background: #6366F1;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(99, 102, 241, 0.15);
+}
+.ds-aside .logo svg {
+  width: 22px;
+  height: 22px;
+}
+.ds-brand-text { font-weight: 700; font-size: 18px; color: #111827; letter-spacing: -0.3px; }
+.ds-side-nav { display:flex; flex-direction: column; gap: 6px; padding-top: 10px; }
+.ds-nav-item {
+  text-align: left;
+  border: 0;
+  background: #fff;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: #6B7280;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 500;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+.ds-nav-item:hover { background:#F3F4F6; }
+.ds-nav-item.active {
+  background: #EEF2FF;
+  color: #4F46E5;
+}
+.ds-nav-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+.ds-nav-ic { display: none; }
+.ds-content { flex: 1; min-width: 0; }
+
+/* Reset some previous full-viewport styles to fit the new layout */
+.dashboard-container { position: static; height: auto; min-height: 100vh; background: #fff; }
+.dashboard-background { display: none; }
+.dashboard-content { height: auto; overflow: visible; }
+.dashboard-header { background: #fff; backdrop-filter: none; box-shadow: none; border-bottom: 1px solid #F3F4F6; padding: 16px 24px; }
+.dashboard-main { width: 100vw; margin: 0 auto; padding: 32px 24px; }
+.tabs-container { justify-content: flex-end; gap: 24px; }
+.tabs-container { display: none !important; }
+.tab { color: #6B7280; background: transparent; border: none; position: relative; }
+.tab.active { color: #111827; }
+.tab.active::after { content:''; position:absolute; left:0; right:0; bottom:-10px; height:2px; background:#7C6CF4; }
+
+.section-question.main-title { font-size: 40px; text-align: center; margin: 8px 0 6px; font-weight: 800; }
+.section-subtitle { text-align: center; color:#6B7280; margin-top: 0; }
+.zapsign-upload-area { border: 2px dashed #E5E7EB; border-radius: 16px; padding: 56px 24px; text-align: center; color: #6B7280; min-height: 260px; }
+.zapsign-upload-area.dragging { background: #FAFAFF; border-color: #DAD6FF; }
+.upload-icon-circle { width: 48px; height: 48px; margin: 0 auto 12px; color: #7C6CF4; }
+.upload-instruction-1 { margin: 0 0 2px; color: #111827; font-weight: 600; }
+.upload-instruction-2 { margin: 0 0 16px; color: #6B7280; }
+.zapsign-upload-label.primary-btn { display: inline-flex; flex-direction: column; align-items: center; cursor: pointer; }
+.zapsign-upload-label .upload-text-primary { background: #7C6CF4; color:#fff; padding: 10px 16px; border-radius: 10px; font-weight: 600; display:inline-block; }
+
+.file-list-container { margin-top: 20px; }
+.file-list-item { grid-template-columns: 36px 1fr 32px; }
+.file-list-item-icon { width: 28px; height: 28px; background: #EEF2FF; border-radius: 8px; position: relative; }
+.file-list-item-icon svg { display: none; }
+.file-list-item-icon::after { content:''; position:absolute; inset:6px; border-radius:4px; background:#7C6CF4; opacity:.85; }
+.file-list-item-btn.btn-delete { background: transparent; border: 0; }
+
+/* Uniform width for primary sections */
+.section { max-width: 760px; margin-left: auto; margin-right: auto; }
+
+/* ========================================
+   FIRMAPRO - DISEÑO EXACTO DE LA IMAGEN
+   ======================================== */
+
+/* Contenedor principal de la sección de upload */
+.upload-section-zapsign {
+  width: 100%;
+  max-width: 1024px;
+  margin: 0 auto;
+  padding: 48px 16px;
+}
+
+/* Stepper personalizado horizontal */
+.firmapro-stepper {
+  margin-bottom: 32px;
+}
+
+.firmapro-stepper-items {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.firmapro-stepper-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.stepper-number {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: #D1D5DB;
+  color: #6B7280;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  transition: all 0.2s;
+}
+
+.stepper-number.active {
+  background-color: #6366F1;
+  color: white;
+}
+
+.stepper-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #9CA3AF;
+  transition: all 0.2s;
+}
+
+.stepper-label.active {
+  color: #6366F1;
+  font-weight: 600;
+}
+
+.stepper-line {
+  flex: 1;
+  height: 1px;
+  background-color: #E5E7EB;
+  margin: 0 12px;
+  min-width: 40px;
+}
+
+/* Card principal */
+.zapsign-content-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  border: 1px solid #E5E7EB;
+  overflow: hidden;
+  max-width: 672px;
+  margin: 0 auto;
+}
+
+/* Header del card */
+.zapsign-header {
+  padding: 24px 32px;
+  border-bottom: none;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.zapsign-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 4px 0;
+  line-height: 1.3;
+}
+
+.zapsign-subtitle {
+  font-size: 14px;
+  color: #6B7280;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.help-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  color: #6B7280;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.help-button:hover {
+  color: #6366F1;
+  background-color: #F3F4F6;
+}
+
+.help-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Sección de carpeta */
+.folder-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #F9FAFB;
+  padding: 16px;
+  margin: 0 32px 24px 32px;
+  border-radius: 8px;
+}
+
+.folder-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.folder-info svg {
+  width: 20px;
+  height: 20px;
+  color: #6B7280;
+}
+
+.folder-change-btn {
+  background: transparent;
+  border: none;
+  color: #6366F1;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.folder-change-btn:hover {
+  color: #4F46E5;
+  background-color: #EEF2FF;
+}
+
+/* Formulario */
+.zapsign-upload-form {
+  padding: 0 32px 32px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Grupos de formulario */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.form-group label span {
+  color: #9CA3AF;
+  font-weight: 400;
+}
+
+.form-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #D1D5DB;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #111827;
+  background-color: transparent;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #6366F1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.form-input::placeholder {
+  color: #9CA3AF;
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* Sección de pregunta */
+.zapsign-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.section-question {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  margin: 0;
+}
+
+/* Área de upload */
+.zapsign-upload-area {
+  margin-top: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 2px dashed #D1D5DB;
+  border-radius: 12px;
+  padding: 40px 24px;
+  text-align: center;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  background-color: #FAFAFA;
+  min-height: auto;
+}
+
+.zapsign-upload-area:hover {
+  border-color: #6366F1;
+  background-color: #FAFAFA;
+}
+
+.zapsign-upload-area.dragging {
+  background-color: #EEF2FF;
+  border-color: #6366F1;
+  border-style: solid;
+}
+
+.zapsign-upload-area.has-files {
+  padding: 24px;
+  background: white;
+  border-color: #10B981;
+}
+
+.file-input-hidden {
+  display: none;
+}
+
+.zapsign-upload-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  cursor: pointer;
+  width: 100%;
+}
+
+.upload-icon-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-color: #EEF2FF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6366F1;
+  margin: 0;
+}
+
+.upload-icon-circle svg {
+  width: 24px;
+  height: 24px;
+}
+
+.upload-text-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.upload-text-primary {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #374151;
+  margin: 0;
+}
+
+.upload-link {
+  color: #6366F1;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.upload-link:hover {
+  color: #4F46E5;
+}
+
+.upload-text-normal {
+  color: #6B7280;
+  font-weight: 400;
+}
+
+.upload-text-secondary {
+  font-size: 12px;
+  color: #9CA3AF;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Footer del formulario */
+.form-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  background-color: #F9FAFB;
+  border-top: 1px solid #E5E7EB;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+  margin-top: 8px;
+}
+
+.footer-btn-back {
+  background: transparent;
+  border: none;
+  color: #6B7280;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 8px 16px;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.footer-btn-back:hover:not(:disabled) {
+  color: #111827;
+  background-color: #F3F4F6;
+}
+
+.footer-btn-back:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.footer-btn-continue {
+  background-color: #6366F1;
+  color: white;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.footer-btn-continue:hover:not(:disabled) {
+  background-color: #4F46E5;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.footer-btn-continue:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Lista de archivos minimalista */
+.file-list-minimal {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.file-item-minimal {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background-color: white;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  transition: all 0.2s;
+  cursor: grab;
+}
+
+.file-item-minimal:hover {
+  border-color: #D1D5DB;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.file-item-minimal:active {
+  cursor: grabbing;
+}
+
+.file-item-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.file-icon-minimal {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background-color: #EEF2FF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #6366F1;
+}
+
+.file-icon-minimal svg {
+  width: 20px;
+  height: 20px;
+}
+
+.file-info-minimal {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.file-name-minimal {
+  font-size: 14px;
+  font-weight: 500;
+  color: #111827;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file-size-minimal {
+  font-size: 12px;
+  color: #6B7280;
+  margin: 0;
+}
+
+.file-delete-minimal {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  color: #9CA3AF;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.file-delete-minimal:hover:not(:disabled) {
+  background-color: #FEE2E2;
+  color: #DC2626;
+}
+
+.file-delete-minimal:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.file-delete-minimal svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Botón para agregar más archivos */
+.add-more-files-container {
+  margin-top: 12px;
+}
+
+.add-more-files-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: 1px dashed #D1D5DB;
+  color: #6366F1;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+  justify-content: center;
+}
+
+.add-more-files-btn:hover:not(:disabled) {
+  border-color: #6366F1;
+  background-color: #F5F3FF;
+}
+
+.add-more-files-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.add-more-files-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .upload-section-zapsign {
+    padding: 24px 16px;
+  }
+
+  .zapsign-header,
+  .zapsign-upload-form {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .folder-section {
+    margin-left: 20px;
+    margin-right: 20px;
+  }
+
+  .header-content {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .firmapro-stepper-items {
+    gap: 0;
+  }
+
+  .stepper-label {
+    font-size: 12px;
+  }
+
+  .stepper-line {
+    min-width: 20px;
+    margin: 0 8px;
+  }
+
+  .file-item-minimal {
+    padding: 10px 12px;
+  }
+
+  .file-icon-minimal {
+    width: 36px;
+    height: 36px;
+  }
+
+  .file-name-minimal {
+    font-size: 13px;
+  }
+
+  .file-size-minimal {
+    font-size: 11px;
+  }
+}
+
+/* ========================================
+   VISOR DE PDF MINIMALISTA - PANTALLA COMPLETA
+   ======================================== */
+
+/* Overlay que cubre toda la pantalla */
+.pdf-viewer-minimal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #F9FAFB;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header del visor - minimalista */
+.pdf-viewer-minimal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  background-color: white;
+  border-bottom: 1px solid #E5E7EB;
+  flex-shrink: 0;
+}
+
+.pdf-viewer-header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  min-width: 0;
+}
+
+.pdf-viewer-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.pdf-viewer-back-btn:hover {
+  background-color: #F3F4F6;
+  color: #111827;
+}
+
+.pdf-viewer-back-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.pdf-viewer-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pdf-viewer-title h2 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pdf-viewer-title p {
+  font-size: 13px;
+  color: #6B7280;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pdf-viewer-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.pdf-viewer-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: 1px solid #E5E7EB;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+}
+
+.pdf-viewer-action-btn:hover {
+  background-color: #F9FAFB;
+  border-color: #D1D5DB;
+}
+
+.pdf-viewer-action-btn.download {
+  color: #6366F1;
+  border-color: #6366F1;
+}
+
+.pdf-viewer-action-btn.download:hover {
+  background-color: #EEF2FF;
+}
+
+.pdf-viewer-action-btn.close {
+  padding: 8px;
+  border: none;
+}
+
+.pdf-viewer-action-btn.sign {
+  color: white;
+  background-color: #10B981;
+  border-color: #10B981;
+}
+
+.pdf-viewer-action-btn.sign:hover {
+  background-color: #059669;
+  border-color: #059669;
+}
+
+.pdf-viewer-action-btn.reject {
+  color: #DC2626;
+  border-color: #DC2626;
+}
+
+.pdf-viewer-action-btn.reject:hover {
+  background-color: #FEE2E2;
+  border-color: #DC2626;
+}
+
+.pdf-viewer-action-btn.close {
+  padding: 8px;
+  border: none;
+}
+
+.pdf-viewer-action-btn.close:hover {
+  background-color: #FEE2E2;
+  color: #DC2626;
+}
+
+.pdf-viewer-action-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Contenedor del PDF */
+.pdf-viewer-minimal-body {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  overflow: hidden;
+}
+
+.pdf-viewer-minimal-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1);
+  background-color: white;
+}
+
+/* Fallback cuando no se puede mostrar el PDF */
+.pdf-fallback-minimal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 48px 24px;
+  text-align: center;
+  background-color: white;
+  border-radius: 12px;
+  border: 2px dashed #E5E7EB;
+}
+
+.fallback-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background-color: #EEF2FF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6366F1;
+}
+
+.fallback-icon svg {
+  width: 32px;
+  height: 32px;
+}
+
+.fallback-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: #374151;
+  margin: 0;
+}
+
+.fallback-download-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #6366F1;
+  color: white;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 12px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.fallback-download-btn:hover {
+  background-color: #4F46E5;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.fallback-download-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Responsive para el visor */
+@media (max-width: 768px) {
+  .pdf-viewer-minimal-header {
+    padding: 12px 16px;
+  }
+
+  .pdf-viewer-header-left {
+    gap: 12px;
+  }
+
+  .pdf-viewer-back-btn span {
+    display: none;
+  }
+
+  .pdf-viewer-title h2 {
+    font-size: 14px;
+  }
+
+  .pdf-viewer-title p {
+    font-size: 12px;
+  }
+
+  .pdf-viewer-action-btn.download span {
+    display: none;
+  }
+
+  .pdf-viewer-minimal-body {
+    padding: 16px;
+  }
+
+  .pdf-viewer-minimal-iframe {
+    border-radius: 8px;
+  }
+
+  .fallback-icon {
+    width: 48px;
+    height: 48px;
+  }
+
+  .fallback-icon svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .fallback-title {
+    font-size: 14px;
+  }
+}
+
+/* ========================================
+   POPUP DE CONFIRMACIÓN DE FIRMA - MINIMALISTA
+   ======================================== */
+
+/* Overlay del popup */
+.sign-confirm-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  z-index: 10001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Modal del popup */
+.sign-confirm-modal {
+  background-color: white;
+  border-radius: 16px;
+  padding: 32px;
+  max-width: 440px;
+  width: 100%;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  animation: slideUp 0.3s ease;
+  text-align: center;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Icono del popup */
+.sign-confirm-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background-color: #D1FAE5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+  color: #10B981;
+}
+
+.sign-confirm-icon svg {
+  width: 32px;
+  height: 32px;
+}
+
+/* Título del popup */
+.sign-confirm-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 12px 0;
+  line-height: 1.3;
+}
+
+/* Mensaje del popup */
+.sign-confirm-message {
+  font-size: 14px;
+  color: #6B7280;
+  margin: 0 0 32px 0;
+  line-height: 1.6;
+}
+
+/* Acciones del popup */
+.sign-confirm-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.sign-confirm-btn {
+  flex: 1;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  max-width: 160px;
+}
+
+.sign-confirm-btn.cancel {
+  background-color: white;
+  border: 1px solid #E5E7EB;
+  color: #374151;
+}
+
+.sign-confirm-btn.cancel:hover {
+  background-color: #F9FAFB;
+  border-color: #D1D5DB;
+}
+
+.sign-confirm-btn.confirm {
+  background-color: #10B981;
+  color: white;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.sign-confirm-btn.confirm:hover {
+  background-color: #059669;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive para el popup */
+@media (max-width: 768px) {
+  .sign-confirm-modal {
+    padding: 24px;
+  }
+
+  .sign-confirm-icon {
+    width: 56px;
+    height: 56px;
+    margin-bottom: 20px;
+  }
+
+  .sign-confirm-icon svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  .sign-confirm-title {
+    font-size: 18px;
+  }
+
+  .sign-confirm-message {
+    font-size: 13px;
+    margin-bottom: 24px;
+  }
+
+  .sign-confirm-actions {
+    flex-direction: column-reverse;
+  }
+
+  .sign-confirm-btn {
+    max-width: 100%;
+  }
+}
+
+/* ========================================
+   POPUP DE RECHAZO DE DOCUMENTO - MINIMALISTA
+   ======================================== */
+
+/* Modal del popup de rechazo */
+.reject-confirm-modal {
+  background-color: white;
+  border-radius: 16px;
+  padding: 32px;
+  max-width: 520px;
+  width: 100%;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  animation: slideUp 0.3s ease;
+  text-align: center;
+}
+
+/* Icono del popup de rechazo */
+.reject-confirm-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background-color: #FEE2E2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+  color: #DC2626;
+}
+
+.reject-confirm-icon svg {
+  width: 32px;
+  height: 32px;
+}
+
+/* Título del popup de rechazo */
+.reject-confirm-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 12px 0;
+  line-height: 1.3;
+}
+
+/* Mensaje del popup de rechazo */
+.reject-confirm-message {
+  font-size: 14px;
+  color: #6B7280;
+  margin: 0 0 24px 0;
+  line-height: 1.6;
+}
+
+/* Contenedor de la razón */
+.reject-reason-container {
+  margin-bottom: 24px;
+}
+
+/* Input de razón */
+.reject-reason-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #D1D5DB;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #111827;
+  font-family: inherit;
+  resize: vertical;
+  transition: all 0.2s;
+  line-height: 1.5;
+}
+
+.reject-reason-input:focus {
+  outline: none;
+  border-color: #DC2626;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+.reject-reason-input::placeholder {
+  color: #9CA3AF;
+}
+
+/* Info de la razón */
+.reject-reason-info {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.char-count {
+  font-size: 12px;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.char-count.insufficient {
+  color: #DC2626;
+}
+
+.char-count.sufficient {
+  color: #10B981;
+}
+
+/* Mensaje de error */
+.reject-error-message {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background-color: #FEE2E2;
+  border: 1px solid #FCA5A5;
+  border-radius: 8px;
+  margin-top: 12px;
+  font-size: 13px;
+  color: #DC2626;
+  text-align: left;
+}
+
+.reject-error-message svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+/* Acciones del popup de rechazo */
+.reject-confirm-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.reject-confirm-btn {
+  flex: 1;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  max-width: 160px;
+}
+
+.reject-confirm-btn.cancel {
+  background-color: white;
+  border: 1px solid #E5E7EB;
+  color: #374151;
+}
+
+.reject-confirm-btn.cancel:hover {
+  background-color: #F9FAFB;
+  border-color: #D1D5DB;
+}
+
+.reject-confirm-btn.confirm {
+  background-color: #DC2626;
+  color: white;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.reject-confirm-btn.confirm:hover:not(:disabled) {
+  background-color: #B91C1C;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.reject-confirm-btn.confirm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Responsive para el popup de rechazo */
+@media (max-width: 768px) {
+  .reject-confirm-modal {
+    padding: 24px;
+    max-width: 100%;
+  }
+
+  .reject-confirm-icon {
+    width: 56px;
+    height: 56px;
+    margin-bottom: 20px;
+  }
+
+  .reject-confirm-icon svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  .reject-confirm-title {
+    font-size: 18px;
+  }
+
+  .reject-confirm-message {
+    font-size: 13px;
+    margin-bottom: 20px;
+  }
+
+  .reject-reason-input {
+    font-size: 13px;
+  }
+
+  .reject-confirm-actions {
+    flex-direction: column-reverse;
+  }
+
+  .reject-confirm-btn {
+    max-width: 100%;
   }
 }

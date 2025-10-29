@@ -88,12 +88,6 @@ function Login({ onLogin }) {
 
   return (
     <div className="login-container">
-      <div className="login-background">
-        <div className="gradient-circle circle-1"></div>
-        <div className="gradient-circle circle-2"></div>
-        <div className="gradient-circle circle-3"></div>
-      </div>
-
       <div className="login-content">
         <div className="login-card">
           <div className="login-header">
@@ -201,12 +195,10 @@ function Login({ onLogin }) {
 
           <div className="login-footer">
             <p className="help-text">
-              ¿Necesitas ayuda? <a href="https://soporteprexxa.com/glpi/index.php?noAUTO=1">Contacta soporte</a>
+              ¿Necesitas ayuda? <a href="https://soporteprexxa.com/glpi/index.php?noAUTO=1" target="_blank" rel="noopener noreferrer">Contacta soporte</a>
             </p>
           </div>
         </div>
-
-        
       </div>
     </div>
   );

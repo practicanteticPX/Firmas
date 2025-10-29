@@ -1,11 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import Box from '@mui/material/Box';
-import Stepper from '@mui/material/Stepper';
-import Step from '@mui/material/Step';
-import StepButton from '@mui/material/StepButton';
-import Button from '@mui/material/Button';
 import './Dashboard.css';
+import './Dashboard.overrides.css';
 
 // Determinar el host del backend basándose en el hostname actual
 const getBackendHost = () => {
@@ -44,6 +40,12 @@ function Dashboard({ user, onLogout }) {
   const [loadingSigned, setLoadingSigned] = useState(false);
   const [loadingMy, setLoadingMy] = useState(false);
   const [viewingDocument, setViewingDocument] = useState(null);
+  const [isViewingPending, setIsViewingPending] = useState(false);
+  const [showSignConfirm, setShowSignConfirm] = useState(false);
+  const [showRejectConfirm, setShowRejectConfirm] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
+  const [rejectError, setRejectError] = useState('');
+  const [showDescription, setShowDescription] = useState(false);
 
   // Estados para firmantes
   const [availableSigners, setAvailableSigners] = useState([]);
@@ -115,7 +117,7 @@ function Dashboard({ user, onLogout }) {
   const canProceedToNextStep = () => {
     switch (activeStep) {
       case 0: // Cargar documentos
-        return selectedFiles && selectedFiles.length > 0;
+        return selectedFiles && selectedFiles.length > 0 && documentTitle.trim().length > 0;
       case 1: // Añadir firmantes
         return selectedSigners && selectedSigners.length > 0;
       case 2: // Enviar
@@ -397,6 +399,15 @@ function Dashboard({ user, onLogout }) {
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
+
+    // Validar máximo 10 archivos
+    const currentCount = selectedFiles.length;
+    const newCount = currentCount + files.length;
+    if (newCount > 10) {
+      setError(`Máximo 10 archivos permitidos. Ya tienes ${currentCount} archivo(s) seleccionado(s).`);
+      return;
+    }
+
     const valid = validateFiles(files);
     if (!valid) return;
     const merge = (current, incoming) => {
@@ -404,7 +415,13 @@ function Dashboard({ user, onLogout }) {
       const result = [...(current || [])];
       for (const f of incoming) {
         const k = f.name + ':' + f.size;
-        if (!map.has(k)) { result.push(f); map.set(k, true); }
+        if (!map.has(k)) {
+          // Validar que no se exceda el límite
+          if (result.length < 10) {
+            result.push(f);
+            map.set(k, true);
+          }
+        }
       }
       return result;
     };
@@ -438,6 +455,14 @@ function Dashboard({ user, onLogout }) {
     setIsDragging(false);
     const files = Array.from(e.dataTransfer.files || []);
     if (files.length > 0) {
+      // Validar máximo 10 archivos
+      const currentCount = selectedFiles.length;
+      const newCount = currentCount + files.length;
+      if (newCount > 10) {
+        setError(`Máximo 10 archivos permitidos. Ya tienes ${currentCount} archivo(s) seleccionado(s).`);
+        return;
+      }
+
       const valid = validateFiles(files);
       if (!valid) return;
       const merge = (current, incoming) => {
@@ -445,7 +470,13 @@ function Dashboard({ user, onLogout }) {
         const result = [...(current || [])];
         for (const f of incoming) {
           const k = f.name + ':' + f.size;
-          if (!map.has(k)) { result.push(f); map.set(k, true); }
+          if (!map.has(k)) {
+            // Validar que no se exceda el límite
+            if (result.length < 10) {
+              result.push(f);
+              map.set(k, true);
+            }
+          }
         }
         return result;
       };
@@ -686,13 +717,119 @@ function Dashboard({ user, onLogout }) {
     }
   };
 
-  const handleViewDocument = (doc) => {
+  /**
+   * Rechazar documento con razón
+   */
+  const handleRejectDocument = async (docId, reason) => {
+    try {
+      const token = localStorage.getItem('token');
+
+      const response = await axios.post(
+        API_URL,
+        {
+          query: `
+            mutation RejectDocument($documentId: ID!, $reason: String!) {
+              rejectDocument(documentId: $documentId, reason: $reason) {
+                id
+                status
+                rejectedAt
+                rejectedBy {
+                  id
+                  name
+                  email
+                }
+                rejectionReason
+              }
+            }
+          `,
+          variables: {
+            documentId: docId,
+            reason: reason
+          }
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+
+      if (response.data.errors) {
+        throw new Error(response.data.errors[0].message);
+      }
+
+      alert('Documento rechazado');
+      // Recargar documentos pendientes
+      loadPendingDocuments();
+    } catch (err) {
+      console.error('Error al rechazar documento:', err);
+      alert(err.message || 'Error al rechazar el documento');
+    }
+  };
+
+  const handleViewDocument = (doc, isPending = false) => {
     // Abrir el visor de PDF con el documento seleccionado
     setViewingDocument(doc);
+    setIsViewingPending(isPending);
   };
 
   const handleCloseViewer = () => {
     setViewingDocument(null);
+    setIsViewingPending(false);
+    setShowSignConfirm(false);
+    setShowRejectConfirm(false);
+    setRejectReason('');
+    setRejectError('');
+    setShowDescription(false);
+  };
+
+  const handleOpenSignConfirm = () => {
+    setShowSignConfirm(true);
+  };
+
+  const handleCancelSign = () => {
+    setShowSignConfirm(false);
+  };
+
+  const handleConfirmSign = async () => {
+    if (viewingDocument) {
+      await handleSignDocument(viewingDocument.id);
+      setShowSignConfirm(false);
+      handleCloseViewer();
+    }
+  };
+
+  const handleOpenRejectConfirm = () => {
+    setShowRejectConfirm(true);
+    setRejectReason('');
+    setRejectError('');
+  };
+
+  const handleCancelReject = () => {
+    setShowRejectConfirm(false);
+    setRejectReason('');
+    setRejectError('');
+  };
+
+  const handleRejectReasonChange = (e) => {
+    const value = e.target.value;
+    setRejectReason(value);
+    if (value.length >= 20) {
+      setRejectError('');
+    }
+  };
+
+  const handleConfirmReject = async () => {
+    if (rejectReason.trim().length < 20) {
+      setRejectError('Debes proporcionar una razón de al menos 20 caracteres');
+      return;
+    }
+
+    if (viewingDocument) {
+      await handleRejectDocument(viewingDocument.id, rejectReason.trim());
+      setShowRejectConfirm(false);
+      handleCloseViewer();
+    }
   };
 
   /**
@@ -981,21 +1118,50 @@ function Dashboard({ user, onLogout }) {
       </div>
 
       <div className="dashboard-content">
+        <div className="ds-shell">
+          {/* Left Sidebar (visual only) */}
+          <aside className="ds-aside">
+            <div className="ds-aside-header">
+              <div className="logo">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              <span className="ds-brand-text">FirmaPRO</span>
+            </div>
+            <nav className="ds-side-nav">
+              <button className={`ds-nav-item ${activeTab === 'upload' ? 'active' : ''}`} onClick={() => setActiveTab('upload')}>
+                <svg className="ds-nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15M17 8L12 3M12 3L7 8M12 3V15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                Subir documento
+              </button>
+              <button className={`ds-nav-item ${activeTab === 'pending' ? 'active' : ''}`} onClick={() => setActiveTab('pending')}>
+                <svg className="ds-nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 6V12L16 14M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                Pendiente de firma
+              </button>
+              <button className={`ds-nav-item ${activeTab === 'signed' ? 'active' : ''}`} onClick={() => setActiveTab('signed')}>
+                <svg className="ds-nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M9 11L12 14L22 4M21 12V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                Documentos firmados
+              </button>
+              <button className={`ds-nav-item ${activeTab === 'my-documents' ? 'active' : ''}`} onClick={() => setActiveTab('my-documents')}>
+                <svg className="ds-nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M3 7V17C3 17.5304 3.21071 18.0391 3.58579 18.4142C3.96086 18.7893 4.46957 19 5 19H19C19.5304 19 20.0391 18.7893 20.4142 18.4142C20.7893 18.0391 21 17.5304 21 17V9C21 8.46957 20.7893 7.96086 20.4142 7.58579C20.0391 7.21071 19.5304 7 19 7H13L11 4H5C4.46957 4 3.96086 4.21071 3.58579 4.58579C3.21071 4.96086 3 5.46957 3 6V7Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                Mis documentos
+              </button>
+            </nav>
+          </aside>
+
+          <div className="ds-content">
         {/* Header */}
         <header className="dashboard-header">
-          <div className="header-left">
-            <div className="logo">
-              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-            <div className="header-info">
-              <h1>FirmaPRO</h1>
-              <p>Sistema de gestión de documentos</p>
-            </div>
-          </div>
           <div className="header-right">
             <div className="user-info">
               <div className="user-avatar">
@@ -1069,39 +1235,42 @@ function Dashboard({ user, onLogout }) {
           {/* Upload Section - Rediseñado estilo ZapSign */}
           {activeTab === 'upload' && (
             <div className="section upload-section-zapsign">
-              {/* Stepper MUI Funcional - 3 Pasos */}
-              <Box sx={{ width: '100%', mb: 4 }}>
-                <Stepper nonLinear activeStep={activeStep}>
-                  {steps.map((label, index) => (
-                    <Step key={label} completed={completed[index]}>
-                      <StepButton color="inherit" onClick={handleStepClick(index)}>
-                        {label}
-                      </StepButton>
-                    </Step>
-                  ))}
-                </Stepper>
-              </Box>
+              {/* Stepper Horizontal Personalizado - 3 Pasos */}
+              <div className="firmapro-stepper">
+                <div className="firmapro-stepper-items">
+                  <div className="firmapro-stepper-item">
+                    <div className={`stepper-number ${activeStep >= 0 ? 'active' : ''}`}>1</div>
+                    <span className={`stepper-label ${activeStep >= 0 ? 'active' : ''}`}>Cargar documentos</span>
+                  </div>
+                  <div className="stepper-line"></div>
+                  <div className="firmapro-stepper-item">
+                    <div className={`stepper-number ${activeStep >= 1 ? 'active' : ''}`}>2</div>
+                    <span className={`stepper-label ${activeStep >= 1 ? 'active' : ''}`}>Añadir firmantes</span>
+                  </div>
+                  <div className="stepper-line"></div>
+                  <div className="firmapro-stepper-item">
+                    <div className={`stepper-number ${activeStep >= 2 ? 'active' : ''}`}>3</div>
+                    <span className={`stepper-label ${activeStep >= 2 ? 'active' : ''}`}>Enviar</span>
+                  </div>
+                </div>
+              </div>
 
               {/* Content Card */}
               <div className="zapsign-content-card">
                 <div className="zapsign-header">
-                  <h2 className="zapsign-title">
-                    Nuevo documento
-                    <button className="help-button-zapsign" title="Necesitas ayuda?">
+                  <div className="header-content">
+                    <div>
+                      <h2 className="zapsign-title">Nuevo documento</h2>
+                      <p className="zapsign-subtitle">Completa los detalles y sube tu archivo para firmar.</p>
+                    </div>
+                    <button type="button" className="help-button">
                       <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" strokeWidth="2"/>
+                        <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                         <path d="M9.09 9C9.3251 8.33167 9.78915 7.76811 10.4 7.40913C11.0108 7.05016 11.7289 6.91894 12.4272 7.03871C13.1255 7.15849 13.7588 7.52152 14.2151 8.06353C14.6713 8.60553 14.9211 9.29152 14.92 10C14.92 12 11.92 13 11.92 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                         <path d="M12 17H12.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
                       <span>Necesito ayuda</span>
                     </button>
-                  </h2>
-                  <div className="folder-selector">
-                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M3 7V17C3 18.1046 3.89543 19 5 19H19C20.1046 19 21 18.1046 21 17V9C21 7.89543 20.1046 7 19 7H13L11 5H5C3.89543 5 3 5.89543 3 7Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                    <span>Documentos</span>
-                    <button className="change-folder-btn">Cambiar carpeta</button>
                   </div>
                 </div>
 
@@ -1129,20 +1298,25 @@ function Dashboard({ user, onLogout }) {
                   {activeStep === 0 && (
                     <>
                       <div className="form-group">
-                        <label htmlFor="document-title">Nombre del conjunto (opcional)</label>
+                        <label htmlFor="document-title">
+                          Título del documento
+                        </label>
                         <input
                           type="text"
                           id="document-title"
                           value={documentTitle}
                           onChange={(e) => setDocumentTitle(e.target.value)}
-                          placeholder="Ej: Contrato de servicios 2024 (conjunto)"
+                          placeholder="Ej: Contrato de servicios 2024"
                           className="form-input"
                           disabled={uploading}
+                          required
                         />
                       </div>
 
                       <div className="form-group">
-                        <label htmlFor="document-description">Descripción (opcional)</label>
+                        <label htmlFor="document-description">
+                          Descripción <span>(opcional)</span>
+                        </label>
                         <textarea
                           id="document-description"
                           value={documentDescription}
@@ -1177,139 +1351,73 @@ function Dashboard({ user, onLogout }) {
 
                       {!selectedFiles || selectedFiles.length === 0 ? (
                         <label htmlFor="file-input-zapsign" className="zapsign-upload-label">
-                          <div className="upload-icon-circle">
+                          <div className="upload-icon-minimal">
                             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                              <path d="M17 8L12 3M12 3L7 8M12 3V15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                              <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15M17 8L12 3M12 3L7 8M12 3V15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                             </svg>
                           </div>
-                          <p className="upload-text-primary">Sube otro archivo</p>
+                          <div className="upload-text-container">
+                            <p className="upload-text-main">
+                              <span className="upload-link">Haz clic para subir</span>
+                              <span className="upload-text-normal"> o arrastra y suelta</span>
+                            </p>
+                            <p className="upload-text-hint">Solo PDF hasta 10MB</p>
+                          </div>
                         </label>
                       ) : (
-                        <div className="file-list-container">
-                          <div className="file-list-header">
-                            <div className="file-list-title">
-                              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                              </svg>
-                              Archivos seleccionados
-                              <span className="file-count-badge">{selectedFiles.length}</span>
-                            </div>
-                            <div className="file-list-actions">
-                              <button
-                                type="button"
-                                className="file-list-action-btn"
-                                onClick={clearAllFiles}
-                                disabled={uploading}
-                              >
-                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                  <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                </svg>
-                                Limpiar todo
-                              </button>
-                            </div>
-                          </div>
-
-                          <div className="file-list-items">
-                            {selectedFiles.map((file, index) => (
-                              <div
-                                key={`${file.name}-${index}`}
-                                className="file-list-item"
-                                draggable={!uploading}
-                                onDragStart={(e) => handleFileDragStart(e, index)}
-                                onDragOver={(e) => handleFileDragOver(e, index)}
-                                onDragEnd={handleFileDragEnd}
-                              >
-                                <div className="file-drag-handle">
+                        <div className="file-list-minimal">
+                          {selectedFiles.map((file, index) => (
+                            <div
+                              key={`${file.name}-${index}`}
+                              className="file-item-minimal"
+                              draggable={!uploading}
+                              onDragStart={(e) => handleFileDragStart(e, index)}
+                              onDragOver={(e) => handleFileDragOver(e, index)}
+                              onDragEnd={handleFileDragEnd}
+                            >
+                              <div className="file-item-left">
+                                <div className="file-icon-minimal">
                                   <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M9 5h6M9 12h6M9 19h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <path d="M14 2V8H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                   </svg>
                                 </div>
-                                <div className="file-list-item-number">{index + 1}</div>
-                                <div className="file-list-item-icon">
-                                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" fill="#DC2626"/>
-                                    <path d="M14 2V8H20" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                  </svg>
-                                </div>
-                                <div className="file-list-item-info">
-                                  <p className="file-list-item-name">{file.name}</p>
-                                  <div className="file-list-item-meta">
-                                    <span className="file-list-item-size">
-                                      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                      </svg>
-                                      {(file.size / 1024 / 1024).toFixed(2)} MB
-                                    </span>
-                                  </div>
-                                </div>
-                                <div className="file-list-item-actions">
-                                  <button
-                                    type="button"
-                                    className="file-list-item-btn btn-delete"
-                                    onClick={() => removeFile(index)}
-                                    disabled={uploading}
-                                    title="Eliminar archivo"
-                                  >
-                                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                      <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                    </svg>
-                                  </button>
+                                <div className="file-info-minimal">
+                                  <p className="file-name-minimal">{file.name}</p>
+                                  <p className="file-size-minimal">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
                                 </div>
                               </div>
-                            ))}
-                          </div>
-
-                          {selectedFiles.length > 1 && (
-                            <div className="unify-checkbox-container">
-                              <input
-                                type="checkbox"
-                                id="unify-pdfs"
-                                checked={unifyPDFs}
-                                onChange={(e) => setUnifyPDFs(e.target.checked)}
+                              <button
+                                type="button"
+                                className="file-delete-minimal"
+                                onClick={() => removeFile(index)}
                                 disabled={uploading}
-                              />
-                              <label htmlFor="unify-pdfs" className="unify-checkbox-label">
+                                title="Eliminar archivo"
+                              >
                                 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                  <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                  <path d="M12 2v4m0 0v4m0-4h4m-4 0H8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                  <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                 </svg>
-                                Unificar todos los PDFs en un solo documento
-                              </label>
+                              </button>
                             </div>
-                          )}
+                          ))}
                         </div>
                       )}
                     </div>
 
-                    {(selectedFiles.length > 0 || selectedFile) && (
-                      <div style={{ marginTop: '12px', display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <button type="button" className="signers-action-btn" onClick={() => { const el = document.getElementById('file-input-zapsign'); if (el) el.click(); }} disabled={uploading}>
-                          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '16px', height: '16px' }}>
+                    {/* Botón para agregar más archivos - minimalista */}
+                    {(selectedFiles.length > 0 || selectedFile) && selectedFiles.length < 10 && (
+                      <div className="add-more-files-container">
+                        <button
+                          type="button"
+                          className="add-more-files-btn"
+                          onClick={() => { const el = document.getElementById('file-input-zapsign'); if (el) el.click(); }}
+                          disabled={uploading}
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M12 4v16m8-8H4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                           </svg>
                           Agregar más archivos
                         </button>
-                        <small className="help-text">Puedes reordenar arrastrando los archivos</small>
-                      </div>
-                    )}
-
-                    {/* Mensaje informativo estilo ZapSign */}
-                    {selectedFiles && selectedFiles.length > 0 && (
-                      <div className="zapsign-info-message">
-                        <div className="info-icon-container">
-                          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" strokeWidth="2"/>
-                            <path d="M12 16V12M12 8H12.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        </div>
-                        <div className="info-message-content">
-                          <p>
-                            Se crearán <strong>{selectedFiles.length} documento{selectedFiles.length > 1 ? 's' : ''}</strong> que se firmarán juntos,
-                            consumiendo <strong>{selectedFiles.length} documento{selectedFiles.length > 1 ? 's' : ''}</strong> de tu plan. Cada documento
-                            puede descargarse por separado.
-                          </p>
-                        </div>
                       </div>
                     )}
                       </div>
@@ -1439,147 +1547,123 @@ function Dashboard({ user, onLogout }) {
                     </>
                   )}
 
-                  {/* Botones de navegación del stepper */}
-                  <Box sx={{ display: 'flex', flexDirection: 'row', pt: 2, mt: 4 }}>
-                    <Button
-                      color="inherit"
-                      disabled={activeStep === 0}
-                      onClick={handleBack}
-                      sx={{ mr: 1 }}
-                    >
-                      Atrás
-                    </Button>
-                    <Box sx={{ flex: '1 1 auto' }} />
-
-                    {activeStep < steps.length - 1 ? (
-                      <Button
-                        onClick={handleNext}
-                        disabled={!canProceedToNextStep()}
-                        variant="contained"
-                        sx={{
-                          bgcolor: '#2563EB',
-                          '&:hover': { bgcolor: '#1D4ED8' },
-                          textTransform: 'uppercase',
-                          fontWeight: 700,
-                          px: 4,
-                          py: 1.5
-                        }}
-                      >
-                        Continuar
-                      </Button>
-                    ) : (
-                      <Button
-                        onClick={handleUpload}
-                        disabled={uploading || !canProceedToNextStep()}
-                        variant="contained"
-                        sx={{
-                          bgcolor: '#10B981',
-                          '&:hover': { bgcolor: '#059669' },
-                          textTransform: 'uppercase',
-                          fontWeight: 700,
-                          px: 4,
-                          py: 1.5
-                        }}
-                      >
-                        {uploading ? 'Enviando...' : 'Enviar Documento'}
-                      </Button>
-                    )}
-                  </Box>
                 </form>
+
+                {/* Footer con botones de navegación */}
+                <div className="form-footer">
+                  <button
+                    type="button"
+                    className="footer-btn-back"
+                    disabled={activeStep === 0}
+                    onClick={handleBack}
+                  >
+                    Atrás
+                  </button>
+
+                  {activeStep < steps.length - 1 ? (
+                    <button
+                      type="button"
+                      className="footer-btn-continue"
+                      onClick={handleNext}
+                      disabled={!canProceedToNextStep()}
+                    >
+                      Continuar
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="footer-btn-continue"
+                      onClick={handleUpload}
+                      disabled={uploading || !canProceedToNextStep()}
+                    >
+                      {uploading ? 'Enviando...' : 'Enviar Documento'}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           )}
 
-          {/* Pending Documents Section */}
-          {/* Pending Documents Section - Rediseñado */}
+          {/* Pending Documents Section - Minimal */}
           {activeTab === 'pending' && (
-            <div className="section pending-section-modern">
-              <div className="modern-header">
-                <div className="header-content">
-                  <h2>Pendientes de Firma</h2>
-                  <p className="header-subtitle">{pendingDocuments.length} documento{pendingDocuments.length !== 1 ? 's' : ''} pendiente{pendingDocuments.length !== 1 ? 's' : ''}</p>
+            <div className="section pending-section-minimal">
+              <div className="section-header-minimal">
+                <div>
+                  <h2 className="section-title-minimal">Pendientes de Firma</h2>
+                  <p className="section-subtitle-minimal">{pendingDocuments.length} documento{pendingDocuments.length !== 1 ? 's' : ''} esperando tu firma</p>
                 </div>
               </div>
 
               {loadingPending ? (
-                <div className="loading-state-modern">
-                  <div className="spinner-modern"></div>
+                <div className="loading-state-minimal">
+                  <div className="spinner-minimal"></div>
                   <p>Cargando documentos...</p>
                 </div>
               ) : pendingDocuments.length === 0 ? (
-                <div className="empty-state-modern">
-                  <div className="empty-icon">
+                <div className="empty-state-minimal">
+                  <div className="empty-icon-minimal">
                     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   </div>
-                  <h3>No hay documentos pendientes</h3>
-                  <p>Todos tus documentos han sido firmados</p>
+                  <h3 className="empty-title-minimal">No hay documentos pendientes</h3>
+                  <p className="empty-text-minimal">Todos tus documentos han sido firmados</p>
                 </div>
               ) : (
-                <div className="documents-list-modern">
+                <div className="documents-grid-minimal">
                   {pendingDocuments.map((doc) => (
-                    <div key={doc.id} className="pending-card-modern">
-                      {/* Left side - PDF Icon and Info */}
-                      <div className="pending-left">
-                        <div className="pdf-icon-modern">
+                    <div key={doc.id} className="doc-card-minimal">
+                      <div className="doc-card-header-minimal">
+                        <div className="doc-icon-minimal">
                           <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" fill="currentColor"/>
-                            <path d="M14 2V8H20" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path d="M14 2V8H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                           </svg>
-                          <span className="pdf-label">PDF</span>
                         </div>
-                        <div className="doc-info-modern">
-                          <h3 className="doc-title-modern">{doc.title}</h3>
-                          <div className="doc-meta-modern">
-                            <span className="meta-date">{formatDateTime(doc.createdAt)}</span>
+                        <span className="doc-badge-minimal pending">Pendiente</span>
+                      </div>
+
+                      <div className="doc-card-body-minimal">
+                        <h3 className="doc-card-title-minimal">{doc.title}</h3>
+                        {doc.description && (
+                          <p className="doc-card-description-minimal">{doc.description}</p>
+                        )}
+                        <div className="doc-card-meta-minimal">
+                          <div className="doc-meta-item-minimal">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21M16 7C16 9.20914 14.2091 11 12 11C9.79086 11 8 9.20914 8 7C8 4.79086 9.79086 3 12 3C14.2091 3 16 4.79086 16 7Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                            <span>{doc.uploadedBy?.name || doc.uploadedBy?.email || 'Desconocido'}</span>
                           </div>
-                          {doc.description && (
-                            <p className="doc-description-modern">{doc.description}</p>
-                          )}
+                          <div className="doc-meta-item-minimal">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M12 8V12L15 15M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                            <span>{formatDateTime(doc.createdAt)}</span>
+                          </div>
                         </div>
                       </div>
 
-                      {/* Center - Sender Info */}
-                      <div className="pending-center">
-                        <div className="sender-info">
-                          <div className="sender-avatar">
-                            {(doc.uploadedBy?.name || doc.uploadedBy?.email || 'D').charAt(0).toUpperCase()}
-                          </div>
-                          <div className="sender-details">
-                            <p className="sender-label">Enviado por</p>
-                            <p className="sender-name">{doc.uploadedBy?.name || doc.uploadedBy?.email || 'Desconocido'}</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Right side - Status and Actions */}
-                      <div className="pending-right">
-                        <span className="status-badge-pending">
-                          <span className="status-icon">⏳</span>
-                          Pendiente de firma
-                        </span>
-                        <div className="actions-modern">
-                          <button
-                            className="btn-icon-modern btn-view-pending"
-                            onClick={() => handleViewDocument(doc)}
-                            title="Ver documento"
-                          >
-                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                              <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                          </button>
-                          <button
-                            className="btn-icon-modern btn-sign-pending"
-                            onClick={() => handleSignDocument(doc.id)}
-                            title="Firmar documento"
-                          >
-                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M11 5H6C5.46957 5 4.96086 5.21071 4.58579 5.58579C4.21071 5.96086 4 6.46957 4 7V19C4 19.5304 4.21071 20.0391 4.58579 20.4142C4.96086 20.7893 5.46957 21 6 21H18C18.5304 21 19.0391 20.7893 19.4142 20.4142C19.7893 20.0391 20 19.5304 20 19V14M18.5 2.5C18.8978 2.1022 19.4374 1.87868 20 1.87868C20.5626 1.87868 21.1022 2.1022 21.5 2.5C21.8978 2.8978 22.1213 3.43739 22.1213 4C22.1213 4.56261 21.8978 5.1022 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                          </button>
-                        </div>
+                      <div className="doc-card-actions-minimal">
+                        <button
+                          className="btn-minimal-secondary"
+                          onClick={() => handleViewDocument(doc, true)}
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                          Ver documento
+                        </button>
+                        <button
+                          className="btn-minimal-primary"
+                          onClick={() => handleSignDocument(doc.id)}
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M11 5H6C5.46957 5 4.96086 5.21071 4.58579 5.58579C4.21071 5.96086 4 6.46957 4 7V19C4 19.5304 4.21071 20.0391 4.58579 20.4142C4.96086 20.7893 5.46957 21 6 21H18C18.5304 21 19.0391 20.7893 19.4142 20.4142C19.7893 20.0391 20 19.5304 20 19V14M18.5 2.5C18.8978 2.1022 19.4374 1.87868 20 1.87868C20.5626 1.87868 21.1022 2.1022 21.5 2.5C21.8978 2.8978 22.1213 3.43739 22.1213 4C22.1213 4.56261 21.8978 5.1022 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                          Firmar ahora
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -1588,111 +1672,88 @@ function Dashboard({ user, onLogout }) {
             </div>
           )}
 
-          {/* Signed Documents Section - Rediseñado */}
+          {/* Signed Documents Section - Minimal */}
           {activeTab === 'signed' && (
-            <div className="section my-documents-section-modern">
-              <div className="modern-header">
-                <div className="header-content">
-                  <h2>Documentos Firmados</h2>
-                  <p className="header-subtitle">{signedDocuments.length} documento{signedDocuments.length !== 1 ? 's' : ''} firmado{signedDocuments.length !== 1 ? 's' : ''}</p>
+            <div className="section pending-section-minimal">
+              <div className="section-header-minimal">
+                <div>
+                  <h2 className="section-title-minimal">Documentos Firmados</h2>
+                  <p className="section-subtitle-minimal">{signedDocuments.length} documento{signedDocuments.length !== 1 ? 's' : ''} completado{signedDocuments.length !== 1 ? 's' : ''}</p>
                 </div>
               </div>
 
               {loadingSigned ? (
-                <div className="loading-state-modern">
-                  <div className="spinner-modern"></div>
+                <div className="loading-state-minimal">
+                  <div className="spinner-minimal"></div>
                   <p>Cargando documentos...</p>
                 </div>
               ) : signedDocuments.length === 0 ? (
-                <div className="empty-state-modern">
-                  <div className="empty-icon">
+                <div className="empty-state-minimal">
+                  <div className="empty-icon-minimal">
                     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   </div>
-                  <h3>No hay documentos firmados</h3>
-                  <p>Los documentos que firmes aparecerán aquí</p>
+                  <h3 className="empty-title-minimal">No hay documentos firmados</h3>
+                  <p className="empty-text-minimal">Los documentos que firmes aparecerán aquí</p>
                 </div>
               ) : (
-                <div className="documents-list-modern">
+                <div className="documents-grid-minimal">
                   {signedDocuments.map((doc) => (
-                    <div key={doc.id} className="doc-card-modern doc-card-signed">
-                      {/* Left side - PDF Icon and Info */}
-                      <div className="doc-left">
-                        <div className="pdf-icon-modern">
+                    <div key={doc.id} className="doc-card-minimal">
+                      <div className="doc-card-header-minimal">
+                        <div className="doc-icon-minimal">
                           <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" fill="currentColor"/>
-                            <path d="M14 2V8H20" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path d="M14 2V8H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                           </svg>
-                          <span className="pdf-label">PDF</span>
                         </div>
-                        <div className="doc-info-modern">
-                          <h3 className="doc-title-modern">{doc.title}</h3>
-                          <div className="doc-meta-modern">
-                            <span className="meta-date">{formatDateTime(doc.createdAt)}</span>
-                            <span className="meta-dot">â€¢</span>
-                            <span className="meta-size">{formatFileSize(doc.fileSize)}</span>
-                          </div>
-                          {doc.description && (
-                            <p className="doc-description-modern">{doc.description}</p>
-                          )}
-                        </div>
+                        <span className="doc-badge-minimal signed">Firmado</span>
                       </div>
 
-                      {/* Center - Firma Info */}
-                      <div className="doc-center">
-                        <div className="progress-modern">
-                          <div className="signed-info-center">
-                            <div className="signed-badge-large">
-                              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="signed-check-icon">
+                      <div className="doc-card-body-minimal">
+                        <h3 className="doc-card-title-minimal">{doc.title}</h3>
+                        {doc.description && (
+                          <p className="doc-card-description-minimal">{doc.description}</p>
+                        )}
+                        <div className="doc-card-meta-minimal">
+                          {doc.signedAt && (
+                            <div className="doc-meta-item-minimal">
+                              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                               </svg>
-                              <span className="signed-label">Documento Firmado</span>
+                              <span>Firmado el {formatDateTime(doc.signedAt)}</span>
                             </div>
-                            {doc.signedAt && (
-                              <div className="signed-date-info">
-                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="calendar-icon">
-                                  <path d="M19 4H5C3.89543 4 3 4.89543 3 6V20C3 21.1046 3.89543 22 5 22H19C20.1046 22 21 21.1046 21 20V6C21 4.89543 20.1046 4 19 4Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                  <path d="M16 2V6M8 2V6M3 10H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                </svg>
-                                <span>Firmado el {formatDateTime(doc.signedAt)}</span>
-                              </div>
-                            )}
-                            {doc.uploadedBy && (
-                              <div className="signed-by-info">
-                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="user-icon">
-                                  <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21M16 7C16 9.20914 14.2091 11 12 11C9.79086 11 8 9.20914 8 7C8 4.79086 9.79086 3 12 3C14.2091 3 16 4.79086 16 7Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                </svg>
-                                <span>Enviado por: {doc.uploadedBy?.name || doc.uploadedBy?.email || 'Desconocido'}</span>
-                              </div>
-                            )}
+                          )}
+                          <div className="doc-meta-item-minimal">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21M16 7C16 9.20914 14.2091 11 12 11C9.79086 11 8 9.20914 8 7C8 4.79086 9.79086 3 12 3C14.2091 3 16 4.79086 16 7Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                            <span>{doc.uploadedBy?.name || doc.uploadedBy?.email || 'Desconocido'}</span>
                           </div>
                         </div>
                       </div>
 
-                      {/* Right side - Actions */}
-                      <div className="doc-right">
-                        <div className="actions-modern-vertical">
-                          <button
-                            className="btn-action-elegant btn-view-elegant"
-                            onClick={() => handleViewDocument(doc)}
-                          >
-                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                              <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                            <span>Ver Documento</span>
-                          </button>
-                          <button
-                            className="btn-action-elegant btn-download-elegant"
-                            onClick={() => window.open(doc.filePath, '_blank')}
-                          >
-                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15M7 10L12 15M12 15L17 10M12 15V3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                            <span>Descargar</span>
-                          </button>
-                        </div>
+                      <div className="doc-card-actions-minimal">
+                        <button
+                          className="btn-minimal-secondary"
+                          onClick={() => handleViewDocument(doc)}
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                          Ver documento
+                        </button>
+                        <button
+                          className="btn-minimal-primary"
+                          onClick={() => window.open(getDocumentUrl(doc.filePath), '_blank')}
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15M7 10L12 15M12 15L17 10M12 15V3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                          Descargar
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -1767,7 +1828,7 @@ function Dashboard({ user, onLogout }) {
                               <h3 className="doc-title-modern">{doc.title}</h3>
                               <div className="doc-meta-modern">
                                 <span className="meta-date">{formatDateTime(doc.createdAt)}</span>
-                                <span className="meta-dot">â€¢</span>
+                                <span className="meta-dot">•</span>
                                 <span className="meta-size">{formatFileSize(doc.fileSize)}</span>
                               </div>
                               {doc.description && (
@@ -1854,66 +1915,193 @@ function Dashboard({ user, onLogout }) {
             </div>
           )}
         </main>
+          </div>{/* /.ds-content */}
+        </div>{/* /.ds-shell */}
       </div>
 
-      {/* PDF Viewer Modal */}
+      {/* PDF Viewer Modal - Diseño Minimalista */}
       {viewingDocument && (
-        <div className="modal-overlay" onClick={handleCloseViewer}>
-          <div className="modal-content pdf-viewer-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <div className="modal-title-section">
+        <div className="pdf-viewer-minimal-overlay">
+          {/* Header Minimalista */}
+          <div className="pdf-viewer-minimal-header">
+            <div className="pdf-viewer-header-left">
+              <button className="pdf-viewer-back-btn" onClick={handleCloseViewer}>
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                Volver
+              </button>
+              <div className="pdf-viewer-title">
                 <h2>{viewingDocument.title}</h2>
-                {viewingDocument.description && (
-                  <p className="modal-description">{viewingDocument.description}</p>
-                )}
               </div>
-              <button className="modal-close-button" onClick={handleCloseViewer}>
+              {viewingDocument.description && (
+                <button
+                  className="pdf-viewer-description-btn"
+                  onClick={() => setShowDescription(!showDescription)}
+                  title={showDescription ? "Ocultar descripción" : "Ver descripción"}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M13 16H12V12H11M12 8H12.01M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+              )}
+            </div>
+            <div className="pdf-viewer-header-right">
+              {isViewingPending && (
+                <>
+                  <button className="pdf-viewer-action-btn reject" onClick={handleOpenRejectConfirm}>
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    Rechazar
+                  </button>
+                  <button className="pdf-viewer-action-btn sign" onClick={handleOpenSignConfirm}>
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M11 5H6C5.46957 5 4.96086 5.21071 4.58579 5.58579C4.21071 5.96086 4 6.46957 4 7V19C4 19.5304 4.21071 20.0391 4.58579 20.4142C4.96086 20.7893 5.46957 21 6 21H18C18.5304 21 19.0391 20.7893 19.4142 20.4142C19.7893 20.0391 20 19.5304 20 19V14M18.5 2.5C18.8978 2.1022 19.4374 1.87868 20 1.87868C20.5626 1.87868 21.1022 2.1022 21.5 2.5C21.8978 2.8978 22.1213 3.43739 22.1213 4C22.1213 4.56261 21.8978 5.1022 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    Firmar
+                  </button>
+                </>
+              )}
+              <button className="pdf-viewer-action-btn close" onClick={handleCloseViewer} title="Cerrar">
                 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </button>
             </div>
-            <div className="modal-body">
-              <object
-                data={getDocumentUrl(viewingDocument.filePath)}
-                type="application/pdf"
-                className="pdf-iframe"
-              >
-                <embed
-                  src={getDocumentUrl(viewingDocument.filePath)}
-                  type="application/pdf"
-                  className="pdf-iframe"
-                />
-                <div className="pdf-fallback">
-                  <p>No se puede mostrar el PDF en este navegador.</p>
-                  <a
-                    href={getDocumentUrl(viewingDocument.filePath)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="action-button action-download"
-                  >
-                    Descargar PDF para ver
-                  </a>
-                </div>
-              </object>
-            </div>
-            <div className="modal-footer">
-              <a
-                href={getDocumentUrl(viewingDocument.filePath)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="action-button action-download"
-              >
-                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15M7 10L12 15M12 15L17 10M12 15V3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                Descargar PDF
-              </a>
-              <button className="action-button action-close" onClick={handleCloseViewer}>
-                Cerrar
-              </button>
-            </div>
           </div>
+
+          {/* Popup de descripción */}
+          {showDescription && viewingDocument.description && (
+            <div className="pdf-description-popup">
+              <div className="pdf-description-content">
+                <div className="pdf-description-header">
+                  <h4>Descripción</h4>
+                  <button
+                    className="pdf-description-close"
+                    onClick={() => setShowDescription(false)}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </button>
+                </div>
+                <p className="pdf-description-text">{viewingDocument.description}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Contenedor del PDF */}
+          <div className="pdf-viewer-minimal-body">
+            <object
+              data={getDocumentUrl(viewingDocument.filePath)}
+              type="application/pdf"
+              className="pdf-viewer-minimal-iframe"
+            >
+              <embed
+                src={getDocumentUrl(viewingDocument.filePath)}
+                type="application/pdf"
+                className="pdf-viewer-minimal-iframe"
+              />
+              <div className="pdf-fallback-minimal">
+                <div className="fallback-icon">
+                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M14 2V8H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+                <p className="fallback-title">No se puede mostrar el PDF en este navegador</p>
+                <a
+                  href={getDocumentUrl(viewingDocument.filePath)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="fallback-download-btn"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15M7 10L12 15M12 15L17 10M12 15V3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  Descargar PDF
+                </a>
+              </div>
+            </object>
+          </div>
+
+          {/* Popup de Confirmación de Firma - Minimalista */}
+          {showSignConfirm && (
+            <div className="sign-confirm-overlay" onClick={handleCancelSign}>
+              <div className="sign-confirm-modal" onClick={(e) => e.stopPropagation()}>
+                <div className="sign-confirm-icon">
+                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M11 5H6C5.46957 5 4.96086 5.21071 4.58579 5.58579C4.21071 5.96086 4 6.46957 4 7V19C4 19.5304 4.21071 20.0391 4.58579 20.4142C4.96086 20.7893 5.46957 21 6 21H18C18.5304 21 19.0391 20.7893 19.4142 20.4142C19.7893 20.0391 20 19.5304 20 19V14M18.5 2.5C18.8978 2.1022 19.4374 1.87868 20 1.87868C20.5626 1.87868 21.1022 2.1022 21.5 2.5C21.8978 2.8978 22.1213 3.43739 22.1213 4C22.1213 4.56261 21.8978 5.1022 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+                <h3 className="sign-confirm-title">Confirmar firma</h3>
+                <p className="sign-confirm-message">
+                  ¿Estás seguro de que deseas firmar este documento? Esta acción no se puede deshacer.
+                </p>
+                <div className="sign-confirm-actions">
+                  <button className="sign-confirm-btn cancel" onClick={handleCancelSign}>
+                    Cancelar
+                  </button>
+                  <button className="sign-confirm-btn confirm" onClick={handleConfirmSign}>
+                    Firmar
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Popup de Rechazo de Documento - Minimalista */}
+          {showRejectConfirm && (
+            <div className="sign-confirm-overlay" onClick={handleCancelReject}>
+              <div className="reject-confirm-modal" onClick={(e) => e.stopPropagation()}>
+                <div className="reject-confirm-icon">
+                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 9V13M12 17H12.01M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+                <h3 className="reject-confirm-title">Rechazar documento</h3>
+                <p className="reject-confirm-message">
+                  Por favor, explica la razón del rechazo. Esta información será visible para todos los involucrados.
+                </p>
+                <div className="reject-reason-container">
+                  <textarea
+                    className="reject-reason-input"
+                    placeholder="Escribe la razón del rechazo (mínimo 20 caracteres)..."
+                    value={rejectReason}
+                    onChange={handleRejectReasonChange}
+                    rows="4"
+                    maxLength="500"
+                  />
+                  <div className="reject-reason-info">
+                    <span className={`char-count ${rejectReason.length < 20 ? 'insufficient' : 'sufficient'}`}>
+                      {rejectReason.length}/500 caracteres {rejectReason.length < 20 && `(mínimo 20)`}
+                    </span>
+                  </div>
+                  {rejectError && (
+                    <div className="reject-error-message">
+                      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 9V13M12 17H12.01M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                      {rejectError}
+                    </div>
+                  )}
+                </div>
+                <div className="reject-confirm-actions">
+                  <button className="reject-confirm-btn cancel" onClick={handleCancelReject}>
+                    Cancelar
+                  </button>
+                  <button
+                    className="reject-confirm-btn confirm"
+                    onClick={handleConfirmReject}
+                    disabled={rejectReason.trim().length < 20}
+                  >
+                    Rechazar
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
