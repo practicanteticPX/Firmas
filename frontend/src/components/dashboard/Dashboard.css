@@ -1296,6 +1296,7 @@
   padding: 16px 20px;
   background: #F9FAFB;
   overflow-y: auto;
+  color: black;
 }
 
 .signers-modal-footer {
@@ -2045,7 +2046,7 @@
   color: #6B7280;
   font-size: 14px;
   margin-top: 4px;
-  margin-bottom: 16px;
+  margin-bottom: 5px;
 }
 
 .signers-loading {
@@ -2103,6 +2104,7 @@
   background: white;
   border-radius: 8px;
   border: 1px solid #E5E7EB;
+  overflow-y: auto;
 }
 
 .signers-empty {
@@ -4030,6 +4032,7 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+  height: auto;
 }
 
 .form-group label {

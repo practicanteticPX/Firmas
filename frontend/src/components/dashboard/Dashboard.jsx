@@ -67,6 +67,9 @@ function Dashboard({ user, onLogout }) {
   const [unifyPDFs, setUnifyPDFs] = useState(true);
   const [draggedIndex, setDraggedIndex] = useState(null);
 
+  // Estado para controlar "ver más" en firmantes de Mis Documentos
+  const [expandedSigners, setExpandedSigners] = useState({});
+
   // Estados para Stepper funcional de MUI (3 pasos)
   const steps = ['Cargar documentos', 'Añadir firmantes', 'Enviar'];
   const [activeStep, setActiveStep] = useState(0);
@@ -280,6 +283,16 @@ function Dashboard({ user, onLogout }) {
                 totalSigners
                 signedCount
                 pendingCount
+                signatures {
+                  id
+                  signer {
+                    id
+                    name
+                    email
+                  }
+                  status
+                  signedAt
+                }
               }
             }
           `
@@ -1708,7 +1721,7 @@ function Dashboard({ user, onLogout }) {
                             <path d="M14 2V8H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                           </svg>
                         </div>
-                        <span className="doc-badge-minimal signed">Firmado</span>
+                        <span className="doc-badge-minimal signed" style={{color: 'black'}}>Firmado</span>
                       </div>
 
                       <div className="doc-card-body-minimal">
@@ -1764,148 +1777,129 @@ function Dashboard({ user, onLogout }) {
 
           {/* My Documents Section - Rediseñado */}
           {activeTab === 'my-documents' && (
-            <div className="section my-documents-section-modern">
-              <div className="modern-header">
-                <div className="header-content">
-                  <h2>Mis Documentos</h2>
-                  <p className="header-subtitle">{myDocuments.length} documento{myDocuments.length !== 1 ? 's' : ''}</p>
+            <div className="section my-documents-section-clean">
+              <div className="section-header-minimal">
+                <div>
+                  <h2 className="section-title-minimal">Mis Documentos</h2>
+                  <p className="section-subtitle-minimal">{myDocuments.length} documento{myDocuments.length !== 1 ? 's' : ''}</p>
                 </div>
               </div>
 
               {loadingMy ? (
-                <div className="loading-state-modern">
-                  <div className="spinner-modern"></div>
+                <div className="loading-state-minimal">
+                  <div className="spinner-minimal"></div>
                   <p>Cargando documentos...</p>
                 </div>
               ) : myDocuments.length === 0 ? (
-                <div className="empty-state-modern">
-                  <div className="empty-icon">
+                <div className="empty-state-minimal">
+                  <div className="empty-icon-minimal">
                     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path d="M9 12H15M9 16H15M17 21H7C5.89543 21 5 20.1046 5 19V5C5 3.89543 5.89543 3 7 3H12.5858C12.851 3 13.1054 3.10536 13.2929 3.29289L18.7071 8.70711C18.8946 8.89464 19 9.149 19 9.41421V19C19 20.1046 18.1046 21 17 21Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   </div>
-                  <h3>No tienes documentos</h3>
-                  <p>Comienza subiendo tu primer documento</p>
-                  <button
-                    className="btn-primary-modern"
-                    onClick={() => setActiveTab('upload')}
-                  >
-                    Subir Documento
-                  </button>
+                  <h3 className="empty-title-minimal">No tienes documentos</h3>
+                  <p className="empty-text-minimal">Comienza subiendo tu primer documento</p>
                 </div>
               ) : (
-                <div className="documents-list-modern">
+                <div className="my-docs-grid-clean">
                   {myDocuments.map((doc) => {
-                      const progress = doc.totalSigners > 0
-                        ? (doc.signedCount / doc.totalSigners) * 100
-                        : 0;
-
                       const getStatusConfig = (status) => {
                         const statusMap = {
-                          pending: { label: 'Pendiente', color: '#F59E0B', bg: '#FEF3C7' },
-                          in_progress: { label: 'En progreso', color: '#3B82F6', bg: '#DBEAFE' },
-                          completed: { label: 'Completado', color: '#10B981', bg: '#D1FAE5'},
-                          rejected: { label: 'Rechazado', color: '#EF4444', bg: '#FEE2E2' },
-                          archived: { label: 'Archivado', color: '#6B7280', bg: '#F3F4F6' }
+                          pending: { label: 'Pendiente', color: '#92400E', bg: '#FEF3C7' },
+                          in_progress: { label: 'En progreso', color: '#954026', bg: '#fef3c7' },
+                          completed: { label: 'Completado', color: '#065F46', bg: '#D1FAE5'},
+                          rejected: { label: 'Rechazado', color: '#991B1B', bg: '#FEE2E2' },
+                          archived: { label: 'Archivado', color: '#374151', bg: '#F3F4F6' }
                         };
                         return statusMap[status] || statusMap.pending;
                       };
 
                       const statusConfig = getStatusConfig(doc.status);
+                      const signatures = doc.signatures || [];
 
                       return (
-                        <div key={doc.id} className="doc-card-modern">
-                          {/* Left side - PDF Icon and Info */}
-                          <div className="doc-left">
-                            <div className="pdf-icon-modern">
-                              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" fill="currentColor"/>
-                                <path d="M14 2V8H20" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                              </svg>
-                              <span className="pdf-label">PDF</span>
-                            </div>
-                            <div className="doc-info-modern">
-                              <h3 className="doc-title-modern">{doc.title}</h3>
-                              <div className="doc-meta-modern">
-                                <span className="meta-date">{formatDateTime(doc.createdAt)}</span>
-                                <span className="meta-dot">•</span>
-                                <span className="meta-size">{formatFileSize(doc.fileSize)}</span>
+                        <div key={doc.id} className="my-doc-card-reference">
+                          {/* Layout completo: título arriba, fecha abajo, firmantes horizontales */}
+                          <div className="doc-content-wrapper">
+                            <div className="doc-header-row">
+                              <h3 className="doc-title-reference">{doc.title}</h3>
+                              <div className="status-badge-clean" style={{
+                                color: statusConfig.color,
+                                backgroundColor: statusConfig.bg
+                              }}>
+                                {statusConfig.label}
                               </div>
-                              {doc.description && (
-                                <p className="doc-description-modern">{doc.description}</p>
+                            </div>
+
+                            <div className="doc-meta-row">
+                              <span className="doc-created-text">Creado el {formatDateTime(doc.createdAt)}</span>
+                            </div>
+
+                            <div className="doc-signers-row">
+                              {(expandedSigners[doc.id] ? signatures : signatures.slice(0, 3)).map((sig) => {
+                                const getSignerStatusColor = (status) => {
+                                  if (status === 'signed') return '#10B981';
+                                  if (status === 'rejected') return '#EF4444';
+                                  return '#F59E0B';
+                                };
+
+                                return (
+                                  <div key={sig.id} className="signer-item-horizontal">
+                                    <span
+                                      className="signer-dot"
+                                      style={{ backgroundColor: getSignerStatusColor(sig.status) }}
+                                    ></span>
+                                    <span className="signer-name">{sig.signer.name || sig.signer.email}</span>
+                                  </div>
+                                );
+                              })}
+                              {signatures.length > 3 && (
+                                <button
+                                  className="btn-ver-todos"
+                                  onClick={() => setExpandedSigners({
+                                    ...expandedSigners,
+                                    [doc.id]: !expandedSigners[doc.id]
+                                  })}
+                                >
+                                  {expandedSigners[doc.id] ? '- ver menos' : '+ ver todos'}
+                                </button>
                               )}
                             </div>
                           </div>
 
-                          {/* Center - Progress */}
-                          <div className="doc-center">
-                            <div className="progress-modern">
-                              <div className="progress-info">
-                                <span className="progress-label-modern">Firmas</span>
-                                <span className="progress-numbers">{doc.signedCount}/{doc.totalSigners}</span>
-                              </div>
-                              <div className="progress-bar-modern">
-                                <div
-                                  className="progress-fill-modern"
-                                  style={{
-                                    width: `${progress}%`,
-                                    backgroundColor: progress === 100 ? '#10B981' : '#3B82F6'
-                                  }}
-                                ></div>
-                              </div>
-                              <div className="progress-tags">
-                                {doc.signedCount > 0 && (
-                                  <span className="tag-signed">{doc.signedCount} firmada{doc.signedCount !== 1 ? 's' : ''}</span>
-                                )}
-                                {doc.pendingCount > 0 && (
-                                  <span className="tag-pending">{doc.pendingCount} pendiente{doc.pendingCount !== 1 ? 's' : ''}</span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Right side - Status and Actions */}
-                          <div className="doc-right">
-                            <span
-                              className="status-badge-modern"
-                              style={{
-                                color: statusConfig.color,
-                                backgroundColor: statusConfig.bg
-                              }}
+                          {/* Botones de acción */}
+                          <div className="doc-actions-clean">
+                            <button
+                              className="btn-action-clean"
+                              onClick={() => handleViewDocument(doc)}
+                              title="Ver documento"
+                              style={{marginTop: '-1.5vw'}}
                             >
-                              <span className="status-icon">{statusConfig.icon}</span>
-                              {statusConfig.label}
-                            </span>
-                            <div className="actions-modern">
-                              <button
-                                className="btn-icon-modern btn-view"
-                                onClick={() => handleViewDocument(doc)}
-                                title="Ver documento"
-                              >
-                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                  <path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                  <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                </svg>
-                              </button>
-                              <button
-                                className="btn-icon-modern btn-manage"
-                                onClick={() => handleManageSigners(doc)}
-                                title="Gestionar firmantes"
-                              >
-                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                  <path d="M17 21V19C17 17.9391 16.5786 16.9217 15.8284 16.1716C15.0783 15.4214 14.0609 15 13 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21M23 21V19C22.9993 18.1137 22.7044 17.2528 22.1614 16.5523C21.6184 15.8519 20.8581 15.3516 20 15.13M16 3.13C16.8604 3.35031 17.623 3.85071 18.1676 4.55232C18.7122 5.25392 19.0078 6.11683 19.0078 7.005C19.0078 7.89317 18.7122 8.75608 18.1676 9.45768C17.623 10.1593 16.8604 10.6597 16 10.88M13 7C13 9.20914 11.2091 11 9 11C6.79086 11 5 9.20914 5 7C5 4.79086 6.79086 3 9 3C11.2091 3 13 4.79086 13 7Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                </svg>
-                              </button>
-                              <button
-                                className="btn-icon-modern btn-delete"
-                                onClick={() => handleDeleteDocument(doc.id, doc.title)}
-                                title="Eliminar documento"
-                              >
-                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                  <path d="M3 6H5H21M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                </svg>
-                              </button>
-                            </div>
+                              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                            </button>
+                            <button
+                              className="btn-action-clean"
+                              onClick={() => handleManageSigners(doc)}
+                              title="Gestionar firmantes"
+                              style={{marginTop: '-1.5vw'}}
+                            >
+                              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M17 21V19C17 17.9391 16.5786 16.9217 15.8284 16.1716C15.0783 15.4214 14.0609 15 13 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21M23 21V19C22.9993 18.1137 22.7044 17.2528 22.1614 16.5523C21.6184 15.8519 20.8581 15.3516 20 15.13M16 3.13C16.8604 3.35031 17.623 3.85071 18.1676 4.55232C18.7122 5.25392 19.0078 6.11683 19.0078 7.005C19.0078 7.89317 18.7122 8.75608 18.1676 9.45768C17.623 10.1593 16.8604 10.6597 16 10.88M13 7C13 9.20914 11.2091 11 9 11C6.79086 11 5 9.20914 5 7C5 4.79086 6.79086 3 9 3C11.2091 3 13 4.79086 13 7Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                            </button>
+                            <button
+                              className="btn-action-clean"
+                              onClick={() => handleDeleteDocument(doc.id, doc.title)}
+                              title="Eliminar documento"
+                              style={{marginTop: '-1.5vw'}}
+                            >
+                              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M3 6H5H21M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                            </button>
                           </div>
                         </div>
                     );
@@ -2249,33 +2243,39 @@ function Dashboard({ user, onLogout }) {
         </div>
       )}
       
-      {/* Modal de confirmación de eliminación */}
+      {/* Modal de confirmación de eliminación - Minimalista */}
       {confirmDeleteOpen && (
-        <div className="modal-overlay" onClick={cancelDeleteDocument}>
-          <div className="signers-modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="signers-modal-header">
-              <div>
-                <h2>Eliminar documento</h2>
-                {deleteDocTitle && (
-                  <p className="modal-subtitle">{deleteDocTitle}</p>
-                )}
-              </div>
-              <button className="modal-close-button" onClick={cancelDeleteDocument}>
-                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </button>
+        <div className="delete-modal-overlay" onClick={cancelDeleteDocument}>
+          <div className="delete-modal-minimal" onClick={(e) => e.stopPropagation()}>
+            {/* Icono de basura circular */}
+            <div className="delete-icon-circle">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M3 6H5H21M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
             </div>
-            <div className="signers-modal-body">
-              <p>Esta seguro de desea eliminar este documento?</p>
-              <p>Esta operación es irreversible.</p>
-            </div>
-            <div className="signers-modal-footer">
-              <button className="btn-close-modal" onClick={cancelDeleteDocument} disabled={deleting}>
+
+            {/* Título y descripción */}
+            <h2 className="delete-modal-title">Eliminar Documento</h2>
+            <p className="delete-modal-description">
+              ¿Estás seguro que deseas eliminar este documento? Esta acción no se puede deshacer.
+            </p>
+
+            {/* Botones */}
+            <div className="delete-modal-buttons">
+              <button
+                className="delete-btn-cancel"
+                onClick={cancelDeleteDocument}
+                disabled={deleting}
+              >
                 Cancelar
               </button>
-              <button className="action-button primary" onClick={confirmDeleteDocument} disabled={deleting} style={{ marginLeft: '8px' }}>
-                {deleting ? 'Eliminando...' : 'Aceptar'}
+              <button
+                className="delete-btn-confirm"
+                onClick={confirmDeleteDocument}
+                disabled={deleting}
+                style={{background:"#fee2e2"}}
+                >
+                {deleting ? 'Eliminando...' : 'Eliminar'}
               </button>
             </div>
           </div>

@@ -360,6 +360,47 @@ const resolvers = {
         );
       }
 
+      // Recalcular el estado del documento basado en todas las firmas
+      const statusResult = await query(
+        `SELECT
+          COUNT(*) as total,
+          SUM(CASE WHEN status = 'signed' THEN 1 ELSE 0 END) as signed,
+          SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
+          SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END) as rejected
+        FROM signatures
+        WHERE document_id = $1`,
+        [documentId]
+      );
+
+      const stats = statusResult.rows[0];
+      const total = parseInt(stats.total);
+      const signed = parseInt(stats.signed);
+      const pending = parseInt(stats.pending);
+      const rejected = parseInt(stats.rejected);
+
+      // Determinar el nuevo estado del documento
+      let newStatus = 'pending';
+
+      if (rejected > 0) {
+        // Si hay alguna firma rechazada, el documento está rechazado
+        newStatus = 'rejected';
+      } else if (total > 0 && signed === total) {
+        // Si todas las firmas están completas, el documento está completado
+        newStatus = 'completed';
+      } else if (signed > 0 && signed < total) {
+        // Si hay algunas firmas pero no todas, está en progreso
+        newStatus = 'in_progress';
+      } else if (pending > 0 && signed === 0) {
+        // Si hay firmas pendientes pero ninguna firmada, está pendiente
+        newStatus = 'pending';
+      }
+
+      // Actualizar el estado del documento
+      await query(
+        'UPDATE documents SET status = $1 WHERE id = $2',
+        [newStatus, documentId]
+      );
+
       return true;
     },
 
@@ -399,14 +440,47 @@ const resolvers = {
     rejectDocument: async (_, { documentId, reason }, { user }) => {
       if (!user) throw new Error('No autenticado');
 
-      await query(
-        'UPDATE documents SET status = $1 WHERE id = $2',
-        ['rejected', documentId]
-      );
-
+      // Actualizar la firma del usuario a rechazada
       await query(
         'UPDATE signatures SET status = $1 WHERE document_id = $2 AND signer_id = $3',
         ['rejected', documentId, user.id]
+      );
+
+      // Recalcular el estado del documento basado en todas las firmas
+      const statusResult = await query(
+        `SELECT
+          COUNT(*) as total,
+          SUM(CASE WHEN status = 'signed' THEN 1 ELSE 0 END) as signed,
+          SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
+          SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END) as rejected
+        FROM signatures
+        WHERE document_id = $1`,
+        [documentId]
+      );
+
+      const stats = statusResult.rows[0];
+      const total = parseInt(stats.total);
+      const signed = parseInt(stats.signed);
+      const rejected = parseInt(stats.rejected);
+
+      // Determinar el nuevo estado del documento
+      let newStatus = 'pending';
+
+      if (rejected > 0) {
+        // Si hay alguna firma rechazada, el documento está rechazado
+        newStatus = 'rejected';
+      } else if (total > 0 && signed === total) {
+        // Si todas las firmas están completas, el documento está completado
+        newStatus = 'completed';
+      } else if (signed > 0 && signed < total) {
+        // Si hay algunas firmas pero no todas, está en progreso
+        newStatus = 'in_progress';
+      }
+
+      // Actualizar el estado del documento
+      await query(
+        'UPDATE documents SET status = $1 WHERE id = $2',
+        [newStatus, documentId]
       );
 
       // Auditoría
@@ -436,22 +510,53 @@ const resolvers = {
         throw new Error('No estás asignado para firmar este documento');
       }
 
-      // Verificar si todos han firmado
-      const pendingResult = await query(
-        `SELECT COUNT(*) as pending FROM signatures
-        WHERE document_id = $1 AND status = 'pending'`,
+      // Recalcular el estado del documento basado en todas las firmas
+      const statusResult = await query(
+        `SELECT
+          COUNT(*) as total,
+          SUM(CASE WHEN status = 'signed' THEN 1 ELSE 0 END) as signed,
+          SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
+          SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END) as rejected
+        FROM signatures
+        WHERE document_id = $1`,
         [documentId]
       );
 
-      if (parseInt(pendingResult.rows[0].pending) === 0) {
+      const stats = statusResult.rows[0];
+      const total = parseInt(stats.total);
+      const signed = parseInt(stats.signed);
+      const pending = parseInt(stats.pending);
+      const rejected = parseInt(stats.rejected);
+
+      // Determinar el nuevo estado del documento
+      let newStatus = 'pending';
+      let shouldSetCompletedAt = false;
+
+      if (rejected > 0) {
+        // Si hay alguna firma rechazada, el documento está rechazado
+        newStatus = 'rejected';
+      } else if (total > 0 && signed === total) {
+        // Si todas las firmas están completas, el documento está completado
+        newStatus = 'completed';
+        shouldSetCompletedAt = true;
+      } else if (signed > 0 && signed < total) {
+        // Si hay algunas firmas pero no todas, está en progreso
+        newStatus = 'in_progress';
+      } else if (pending > 0 && signed === 0) {
+        // Si hay firmas pendientes pero ninguna firmada, está pendiente
+        newStatus = 'pending';
+      }
+
+      // Actualizar el estado del documento
+      if (shouldSetCompletedAt) {
         await query(
           'UPDATE documents SET status = $1, completed_at = CURRENT_TIMESTAMP WHERE id = $2',
-          ['completed', documentId]
+          [newStatus, documentId]
         );
       } else {
         await query(
           'UPDATE documents SET status = $1 WHERE id = $2',
-          ['in_progress', documentId]
+          [newStatus, documentId]
         );
       }
 
