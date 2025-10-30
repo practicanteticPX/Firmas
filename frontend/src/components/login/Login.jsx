@@ -64,9 +64,18 @@ function Login({ onLogin }) {
         }
       });
 
-      // Verificar si hay errores de GraphQL
+      // Verificar si hay errores de GraphQL y mejorar logging para debug
       if (response.data.errors) {
-        throw new Error(response.data.errors[0].message);
+        console.error('GraphQL errors from server:', response.data.errors);
+        // Mostrar el mensaje del primer error al usuario
+        const msg = response.data.errors[0]?.message || 'Error en autenticación (GraphQL)';
+        throw new Error(msg);
+      }
+
+      // Verificar que la respuesta tenga la estructura esperada
+      if (!response.data || !response.data.data || !response.data.data.login) {
+        console.error('Unexpected GraphQL response:', response.data);
+        throw new Error('Respuesta inesperada del servidor. Revisa la consola para más detalles.');
       }
 
       const { token, user } = response.data.data.login;
