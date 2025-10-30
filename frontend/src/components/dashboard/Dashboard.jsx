@@ -989,6 +989,7 @@ function Dashboard({ user, onLogout }) {
                 status
                 signedAt
                 createdAt
+                rejectionReason
               }
             }
           `,
@@ -1108,6 +1109,7 @@ function Dashboard({ user, onLogout }) {
                 status
                 signedAt
                 createdAt
+                rejectionReason
               }
             }
           `,
@@ -2043,10 +2045,9 @@ function Dashboard({ user, onLogout }) {
                               </svg>
                             </button>
                             <button
-                              className={`btn-action-clean ${doc.status === 'rejected' ? 'disabled' : ''}`}
-                              onClick={() => doc.status !== 'rejected' && handleManageSigners(doc)}
-                              title={doc.status === 'rejected' ? 'No se puede gestionar firmantes en un documento rechazado' : 'Gestionar firmantes'}
-                              disabled={doc.status === 'rejected'}
+                              className="btn-action-clean"
+                              onClick={() => handleManageSigners(doc)}
+                              title="Ver firmantes"
                               style={{marginTop: '-1.5vw'}}
                             >
                               <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -2321,6 +2322,9 @@ function Dashboard({ user, onLogout }) {
                           {signature.status === 'pending' && (
                             <p className="signer-timestamp-pending">Pendiente desde: {formatDateTime(signature.createdAt)}</p>
                           )}
+                          {signature.status === 'rejected' && signature.rejectionReason && (
+                            <p className="signer-rejection-reason">Razón: {signature.rejectionReason}</p>
+                          )}
                         </div>
                         <div className="signer-status-badge-modal">
                           {signature.status === 'signed' && (
@@ -2343,7 +2347,8 @@ function Dashboard({ user, onLogout }) {
                     ))}
                   </div>
 
-                  {/* Sección para agregar nuevos firmantes */}
+                  {/* Sección para agregar nuevos firmantes - Solo si el documento no está rechazado */}
+                  {managingDocument.status !== 'rejected' && (
                   <div className="signers-add-section" style={{ marginTop: '16px' }}>
                     <h3 style={{ marginBottom: '8px' }}>Agregar firmantes</h3>
                     {(() => {
@@ -2437,6 +2442,7 @@ function Dashboard({ user, onLogout }) {
                       );
                     })()}
                   </div>
+                  )}
                 </>
               )}
             </div>
@@ -2445,6 +2451,7 @@ function Dashboard({ user, onLogout }) {
               <button className="btn-close-modal" onClick={handleCloseSignersModal}>
                 Cerrar
               </button>
+              {managingDocument.status !== 'rejected' && (
               <button
                 className="action-button primary"
                 onClick={handleAddSignersToDocument}
@@ -2453,6 +2460,7 @@ function Dashboard({ user, onLogout }) {
               >
                 Agregar firmantes
               </button>
+              )}
             </div>
           </div>
         </div>

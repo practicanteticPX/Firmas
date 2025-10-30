@@ -608,6 +608,7 @@ const resolvers = {
     signatureType: (parent) => parent.signature_type,
     ipAddress: (parent) => parent.ip_address,
     userAgent: (parent) => parent.user_agent,
+    rejectionReason: (parent) => parent.rejection_reason,
     signedAt: (parent) => parent.signed_at,
     createdAt: (parent) => parent.created_at,
     updatedAt: (parent) => parent.updated_at,

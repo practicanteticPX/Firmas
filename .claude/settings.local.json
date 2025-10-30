@@ -25,7 +25,9 @@
       "Bash(node:*)",
       "Bash(taskkill:*)",
       "Bash(docker --version:*)",
-      "Bash(del Dashboard.jsx)"
+      "Bash(del Dashboard.jsx)",
+      "Bash(docker restart:*)",
+      "Bash(docker logs:*)"
     ],
     "deny": [],
     "ask": []
