@@ -54,6 +54,7 @@ const typeDefs = gql`
     ipAddress: String
     userAgent: String
     status: String!
+    rejectionReason: String
     signedAt: String
     createdAt: String!
     updatedAt: String!

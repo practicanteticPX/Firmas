@@ -46,11 +46,16 @@ function Dashboard({ user, onLogout }) {
   const [rejectReason, setRejectReason] = useState('');
   const [rejectError, setRejectError] = useState('');
   const [showDescription, setShowDescription] = useState(false);
+  const [showRejectSuccess, setShowRejectSuccess] = useState(false);
 
   // Estados para firmantes
   const [availableSigners, setAvailableSigners] = useState([]);
   const [selectedSigners, setSelectedSigners] = useState([]);
   const [loadingSigners, setLoadingSigners] = useState(false);
+
+  // Estados para búsqueda de firmantes
+  const [searchTermUpload, setSearchTermUpload] = useState('');
+  const [searchTermModal, setSearchTermModal] = useState('');
 
   // Estados para modal de gestión de firmantes
   const [managingDocument, setManagingDocument] = useState(null);
@@ -291,6 +296,7 @@ function Dashboard({ user, onLogout }) {
                     email
                   }
                   status
+                  rejectionReason
                   signedAt
                 }
               }
@@ -407,6 +413,34 @@ function Dashboard({ user, onLogout }) {
    */
   const clearSelectedSigners = () => {
     setSelectedSigners([]);
+  };
+
+  /**
+   * Filtrar firmantes para la vista de subir documento
+   */
+  const getFilteredSignersForUpload = () => {
+    if (!searchTermUpload.trim()) {
+      return availableSigners;
+    }
+    const term = searchTermUpload.toLowerCase();
+    return availableSigners.filter(signer =>
+      signer.name.toLowerCase().includes(term) ||
+      signer.email.toLowerCase().includes(term)
+    );
+  };
+
+  /**
+   * Filtrar firmantes para el modal de mis documentos
+   */
+  const getFilteredSignersForModal = (candidates) => {
+    if (!searchTermModal.trim()) {
+      return candidates;
+    }
+    const term = searchTermModal.toLowerCase();
+    return candidates.filter(signer =>
+      signer.name.toLowerCase().includes(term) ||
+      signer.email.toLowerCase().includes(term)
+    );
   };
 
   const handleFileChange = (e) => {
@@ -651,6 +685,40 @@ function Dashboard({ user, onLogout }) {
           if (assignResponse.data.errors) {
             throw new Error(assignResponse.data.errors[0].message);
           }
+
+          // Autofirma: Si el usuario actual está en la lista de firmantes, firmar automáticamente
+          if (user && user.id && selectedSigners.includes(user.id)) {
+            try {
+              const signResponse = await axios.post(
+                API_URL,
+                {
+                  query: `
+                    mutation SignDocument($documentId: ID!, $signatureData: String!) {
+                      signDocument(documentId: $documentId, signatureData: $signatureData) {
+                        id
+                        status
+                        signedAt
+                      }
+                    }
+                  `,
+                  variables: {
+                    documentId: doc.id,
+                    signatureData: `Autofirmado por ${user.name || user.email} el ${new Date().toLocaleString('es-CO', { timeZone: 'America/Bogota' })}`
+                  }
+                },
+                { headers: { Authorization: `Bearer ${token}` } }
+              );
+
+              if (signResponse.data.errors) {
+                console.error('Error en autofirma:', signResponse.data.errors);
+              } else {
+                console.log('✅ Documento autofirmado exitosamente:', doc.id);
+              }
+            } catch (signError) {
+              console.error('Error al autofirmar documento:', signError);
+              // No lanzamos el error para no interrumpir el flujo
+            }
+          }
         }
 
         setUploadSuccess(true);
@@ -741,23 +809,13 @@ function Dashboard({ user, onLogout }) {
         API_URL,
         {
           query: `
-            mutation RejectDocument($documentId: ID!, $reason: String!) {
-              rejectDocument(documentId: $documentId, reason: $reason) {
-                id
-                status
-                rejectedAt
-                rejectedBy {
-                  id
-                  name
-                  email
-                }
-                rejectionReason
-              }
+            mutation RejectDocument($documentId: ID!, $reason: String) {
+              rejectDocument(documentId: $documentId, reason: $reason)
             }
           `,
           variables: {
             documentId: docId,
-            reason: reason
+            reason: reason || ''
           }
         },
         {
@@ -771,9 +829,12 @@ function Dashboard({ user, onLogout }) {
         throw new Error(response.data.errors[0].message);
       }
 
-      alert('Documento rechazado');
+      // Mostrar popup de éxito
+      setShowRejectSuccess(true);
+      setTimeout(() => setShowRejectSuccess(false), 3000);
+
       // Recargar documentos pendientes
-      loadPendingDocuments();
+      await loadPendingDocuments();
     } catch (err) {
       console.error('Error al rechazar documento:', err);
       alert(err.message || 'Error al rechazar el documento');
@@ -827,20 +888,23 @@ function Dashboard({ user, onLogout }) {
   const handleRejectReasonChange = (e) => {
     const value = e.target.value;
     setRejectReason(value);
-    if (value.length >= 20) {
+    if (value.length >= 5) {
       setRejectError('');
     }
   };
 
   const handleConfirmReject = async () => {
-    if (rejectReason.trim().length < 20) {
-      setRejectError('Debes proporcionar una razón de al menos 20 caracteres');
+    if (rejectReason.trim().length < 5) {
+      setRejectError('Debes proporcionar una razón de al menos 5 caracteres');
       return;
     }
 
     if (viewingDocument) {
       await handleRejectDocument(viewingDocument.id, rejectReason.trim());
+      // Limpiar estados del modal de rechazo
       setShowRejectConfirm(false);
+      setRejectReason('');
+      setRejectError('');
       handleCloseViewer();
     }
   };
@@ -995,6 +1059,40 @@ function Dashboard({ user, onLogout }) {
 
       if (response.data.errors) {
         throw new Error(response.data.errors[0].message);
+      }
+
+      // Autofirma: Si el usuario actual está en la lista de firmantes agregados, firmar automáticamente
+      if (user && user.id && modalSelectedSigners.includes(user.id)) {
+        try {
+          const signResponse = await axios.post(
+            API_URL,
+            {
+              query: `
+                mutation SignDocument($documentId: ID!, $signatureData: String!) {
+                  signDocument(documentId: $documentId, signatureData: $signatureData) {
+                    id
+                    status
+                    signedAt
+                  }
+                }
+              `,
+              variables: {
+                documentId: managingDocument.id,
+                signatureData: `Autofirmado por ${user.name || user.email} el ${new Date().toLocaleString('es-CO', { timeZone: 'America/Bogota' })}`
+              }
+            },
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+
+          if (signResponse.data.errors) {
+            console.error('Error en autofirma:', signResponse.data.errors);
+          } else {
+            console.log('✅ Documento autofirmado exitosamente:', managingDocument.id);
+          }
+        } catch (signError) {
+          console.error('Error al autofirmar documento:', signError);
+          // No lanzamos el error para no interrumpir el flujo
+        }
       }
 
       // Refrescar lista de firmantes del documento
@@ -1452,6 +1550,34 @@ function Dashboard({ user, onLogout }) {
                       </div>
                     ) : (
                       <>
+                        {/* Buscador de firmantes */}
+                        <div className="signers-search-container">
+                          <div className="search-input-wrapper">
+                            <svg className="search-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                            <input
+                              type="text"
+                              className="signers-search-input"
+                              placeholder="Buscar por nombre o correo..."
+                              value={searchTermUpload}
+                              onChange={(e) => setSearchTermUpload(e.target.value)}
+                              disabled={uploading}
+                            />
+                            {searchTermUpload && (
+                              <button
+                                className="search-clear-btn"
+                                onClick={() => setSearchTermUpload('')}
+                                type="button"
+                              >
+                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                  <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
                         <div className="signers-actions">
                           <button
                             type="button"
@@ -1475,12 +1601,23 @@ function Dashboard({ user, onLogout }) {
                         </div>
 
                         <div className="signers-list">
-                          {availableSigners.length === 0 ? (
-                            <div className="signers-empty">
-                              <p>No hay usuarios disponibles para seleccionar como firmantes</p>
-                            </div>
-                          ) : (
-                            availableSigners.map(signer => (
+                          {(() => {
+                            const filteredSigners = getFilteredSignersForUpload();
+                            if (availableSigners.length === 0) {
+                              return (
+                                <div className="signers-empty">
+                                  <p>No hay usuarios disponibles para seleccionar como firmantes</p>
+                                </div>
+                              );
+                            }
+                            if (filteredSigners.length === 0) {
+                              return (
+                                <div className="signers-empty">
+                                  <p>No se encontraron firmantes que coincidan con "{searchTermUpload}"</p>
+                                </div>
+                              );
+                            }
+                            return filteredSigners.map(signer => (
                               <div
                                 key={signer.id}
                                 className={`signer-item ${selectedSigners.includes(signer.id) ? 'selected' : ''}`}
@@ -1498,7 +1635,12 @@ function Dashboard({ user, onLogout }) {
                                     {signer.name.charAt(0).toUpperCase()}
                                   </div>
                                   <div className="signer-details">
-                                    <p className="signer-name">{signer.name}</p>
+                                    <p className="signer-name">
+                                      {signer.name}
+                                      {user && user.id === signer.id && (
+                                        <span className="you-badge">Tú</span>
+                                      )}
+                                    </p>
                                     <p className="signer-email">{signer.email}</p>
                                   </div>
                                 </div>
@@ -1508,8 +1650,8 @@ function Dashboard({ user, onLogout }) {
                                   </span>
                                 </div>
                               </div>
-                            ))
-                          )}
+                            ));
+                          })()}
                         </div>
                       </>
                     )}
@@ -1599,7 +1741,7 @@ function Dashboard({ user, onLogout }) {
 
           {/* Pending Documents Section - Minimal */}
           {activeTab === 'pending' && (
-            <div className="section pending-section-minimal">
+            <div className="section pending-section-minimal" id='pending-section-minimal'>
               <div className="section-header-minimal">
                 <div>
                   <h2 className="section-title-minimal">Pendientes de Firma</h2>
@@ -1835,6 +1977,26 @@ function Dashboard({ user, onLogout }) {
                               <span className="doc-created-text">Creado el {formatDateTime(doc.createdAt)}</span>
                             </div>
 
+                            {/* Mostrar justificación de rechazo si el documento fue rechazado */}
+                            {doc.status === 'rejected' && (() => {
+                              const rejectedSignature = signatures.find(sig => sig.status === 'rejected' && sig.rejectionReason);
+                              if (!rejectedSignature) return null;
+
+                              return (
+                                <div className="rejection-info-box">
+                                  <div className="rejection-header">
+                                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                      <path d="M12 9V13M12 17H12.01M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    </svg>
+                                    <span className="rejection-title">
+                                      Rechazado por {rejectedSignature.signer.name || rejectedSignature.signer.email}
+                                    </span>
+                                  </div>
+                                  <p className="rejection-reason">{rejectedSignature.rejectionReason}</p>
+                                </div>
+                              );
+                            })()}
+
                             <div className="doc-signers-row">
                               {(expandedSigners[doc.id] ? signatures : signatures.slice(0, 3)).map((sig) => {
                                 const getSignerStatusColor = (status) => {
@@ -1867,7 +2029,7 @@ function Dashboard({ user, onLogout }) {
                             </div>
                           </div>
 
-                          {/* Botones de acción */}
+                          {/* Botones de acción - Deshabilitados si está rechazado */}
                           <div className="doc-actions-clean">
                             <button
                               className="btn-action-clean"
@@ -1881,9 +2043,10 @@ function Dashboard({ user, onLogout }) {
                               </svg>
                             </button>
                             <button
-                              className="btn-action-clean"
-                              onClick={() => handleManageSigners(doc)}
-                              title="Gestionar firmantes"
+                              className={`btn-action-clean ${doc.status === 'rejected' ? 'disabled' : ''}`}
+                              onClick={() => doc.status !== 'rejected' && handleManageSigners(doc)}
+                              title={doc.status === 'rejected' ? 'No se puede gestionar firmantes en un documento rechazado' : 'Gestionar firmantes'}
+                              disabled={doc.status === 'rejected'}
                               style={{marginTop: '-1.5vw'}}
                             >
                               <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1891,9 +2054,10 @@ function Dashboard({ user, onLogout }) {
                               </svg>
                             </button>
                             <button
-                              className="btn-action-clean"
-                              onClick={() => handleDeleteDocument(doc.id, doc.title)}
-                              title="Eliminar documento"
+                              className={`btn-action-clean ${doc.status === 'rejected' ? 'disabled' : ''}`}
+                              onClick={() => doc.status !== 'rejected' && handleDeleteDocument(doc.id, doc.title)}
+                              title={doc.status === 'rejected' ? 'No se puede eliminar un documento rechazado (solo para trazabilidad)' : 'Eliminar documento'}
+                              disabled={doc.status === 'rejected'}
                               style={{marginTop: '-1.5vw'}}
                             >
                               <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -2061,15 +2225,15 @@ function Dashboard({ user, onLogout }) {
                 <div className="reject-reason-container">
                   <textarea
                     className="reject-reason-input"
-                    placeholder="Escribe la razón del rechazo (mínimo 20 caracteres)..."
+                    placeholder="Escribe la razón del rechazo (mínimo 5 caracteres)..."
                     value={rejectReason}
                     onChange={handleRejectReasonChange}
                     rows="4"
                     maxLength="500"
                   />
                   <div className="reject-reason-info">
-                    <span className={`char-count ${rejectReason.length < 20 ? 'insufficient' : 'sufficient'}`}>
-                      {rejectReason.length}/500 caracteres {rejectReason.length < 20 && `(mínimo 20)`}
+                    <span className={`char-count ${rejectReason.length < 5 ? 'insufficient' : 'sufficient'}`}>
+                      {rejectReason.length}/500 caracteres (mínimo 5)
                     </span>
                   </div>
                   {rejectError && (
@@ -2088,11 +2252,26 @@ function Dashboard({ user, onLogout }) {
                   <button
                     className="reject-confirm-btn confirm"
                     onClick={handleConfirmReject}
-                    disabled={rejectReason.trim().length < 20}
+                    disabled={rejectReason.trim().length < 5}
                   >
                     Rechazar
                   </button>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Popup de Éxito al Rechazar - Elegante */}
+          {showRejectSuccess && (
+            <div className="success-popup-overlay">
+              <div className="success-popup reject-success">
+                <div className="success-icon-circle">
+                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+                <h3 className="success-title">Documento rechazado</h3>
+                <p className="success-message">El documento ha sido rechazado exitosamente. Los involucrados han sido notificados.</p>
               </div>
             </div>
           )}
@@ -2170,8 +2349,37 @@ function Dashboard({ user, onLogout }) {
                     {(() => {
                       const existingIds = new Set((documentSigners || []).map(s => s?.signer?.id).filter(Boolean));
                       const candidates = (availableSigners || []).filter(s => !existingIds.has(s.id));
+                      const filteredCandidates = getFilteredSignersForModal(candidates);
+
                       return (
                         <>
+                          {/* Buscador de firmantes para modal */}
+                          <div className="signers-search-container" style={{ marginBottom: '12px' }}>
+                            <div className="search-input-wrapper">
+                              <svg className="search-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                              <input
+                                type="text"
+                                className="signers-search-input"
+                                placeholder="Buscar por nombre o correo..."
+                                value={searchTermModal}
+                                onChange={(e) => setSearchTermModal(e.target.value)}
+                              />
+                              {searchTermModal && (
+                                <button
+                                  className="search-clear-btn"
+                                  onClick={() => setSearchTermModal('')}
+                                  type="button"
+                                >
+                                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                  </svg>
+                                </button>
+                              )}
+                            </div>
+                          </div>
+
                           <div className="signers-actions" style={{ marginBottom: '8px' }}>
                             <button
                               type="button"
@@ -2197,8 +2405,10 @@ function Dashboard({ user, onLogout }) {
                           <div className="signers-list">
                             {candidates.length === 0 ? (
                               <div className="signers-empty">No hay más usuarios disponibles para agregar</div>
+                            ) : filteredCandidates.length === 0 ? (
+                              <div className="signers-empty">No se encontraron firmantes que coincidan con "{searchTermModal}"</div>
                             ) : (
-                              candidates.map(signer => (
+                              filteredCandidates.map(signer => (
                                 <div
                                   key={signer.id}
                                   className={`signer-item ${modalSelectedSigners.includes(signer.id) ? 'selected' : ''}`}
@@ -2208,7 +2418,12 @@ function Dashboard({ user, onLogout }) {
                                     {(signer.name || signer.email || 'U').charAt(0).toUpperCase()}
                                   </div>
                                   <div className="signer-details">
-                                    <div className="signer-name">{signer.name || 'Usuario'}</div>
+                                    <div className="signer-name">
+                                      {signer.name || 'Usuario'}
+                                      {user && user.id === signer.id && (
+                                        <span className="you-badge">Tú</span>
+                                      )}
+                                    </div>
                                     <div className="signer-email">{signer.email}</div>
                                   </div>
                                   {modalSelectedSigners.includes(signer.id) && (

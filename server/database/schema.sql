@@ -63,6 +63,7 @@ CREATE TABLE IF NOT EXISTS signatures (
     ip_address VARCHAR(45), -- IPv4 o IPv6
     user_agent TEXT,
     status VARCHAR(50) DEFAULT 'pending' CHECK (status IN ('pending', 'signed', 'rejected')),
+    rejection_reason TEXT, -- Razón del rechazo cuando status = 'rejected'
     signed_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,

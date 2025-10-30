@@ -317,6 +317,8 @@
   }
 }
 
+/* Eliminado margin-left negativo que causaba corte de elementos */
+
 .section-card {
   background: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(20px);
@@ -1295,7 +1297,6 @@
 .signers-modal-body {
   padding: 16px 20px;
   background: #F9FAFB;
-  overflow-y: auto;
   color: black;
 }
 
@@ -2049,6 +2050,84 @@
   margin-bottom: 5px;
 }
 
+/* Buscador de firmantes - Estilo ZapSign */
+.signers-search-container {
+  margin-bottom: 16px;
+  margin-top: 16px;
+}
+
+.search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.search-input-wrapper .search-icon {
+  position: absolute;
+  left: 14px;
+  width: 20px;
+  height: 20px;
+  color: #9CA3AF;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.signers-search-input {
+  width: 100%;
+  padding: 12px 42px 12px 44px;
+  border: 1.5px solid #E5E7EB;
+  border-radius: 10px;
+  font-size: 14px;
+  color: #111827;
+  background: white;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+  outline: none;
+}
+
+.signers-search-input:focus {
+  border-color: #6366F1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.signers-search-input:disabled {
+  background: #F3F4F6;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.signers-search-input::placeholder {
+  color: #9CA3AF;
+}
+
+.search-clear-btn {
+  position: absolute;
+  right: 10px;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  background: #F3F4F6;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #6B7280;
+}
+
+.search-clear-btn:hover {
+  background: #E5E7EB;
+  color: #374151;
+}
+
+.search-clear-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
 .signers-loading {
   display: flex;
   align-items: center;
@@ -2191,9 +2270,27 @@
   color: #111827;
   margin: 0;
   font-size: 14px;
-  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   overflow: hidden;
-  text-overflow: ellipsis;
+}
+
+/* Badge "Tú" para identificar al usuario actual */
+.you-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
+  color: white;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(99, 102, 241, 0.2);
 }
 
 .signer-email {
@@ -5109,5 +5206,179 @@
 
   .reject-confirm-btn {
     max-width: 100%;
+  }
+}
+
+/* ========================================
+   POPUP DE ÉXITO AL RECHAZAR
+   ======================================== */
+
+.success-popup-overlay {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 10000;
+  animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.success-popup {
+  background: white;
+  border-radius: 12px;
+  padding: 20px 24px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.08);
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-left: 4px solid #10B981;
+  animation: fadeIn 0.3s ease;
+}
+
+.success-popup.reject-success {
+  border-left-color: #DC2626;
+}
+
+.success-icon-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #10B981;
+  margin: 0 auto;
+}
+
+.reject-success .success-icon-circle {
+  background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%);
+  color: #DC2626;
+}
+
+.success-icon-circle svg {
+  width: 28px;
+  height: 28px;
+  stroke-width: 2.5;
+}
+
+.success-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+  text-align: center;
+}
+
+.success-message {
+  font-size: 14px;
+  color: #6B7280;
+  margin: 0;
+  text-align: center;
+  line-height: 1.5;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ========================================
+   CAJA DE INFORMACIÓN DE RECHAZO EN MIS DOCUMENTOS
+   ======================================== */
+
+.rejection-info-box {
+  background: linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 100%);
+  border: 1.5px solid #FECACA;
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 12px;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rejection-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.rejection-header svg {
+  width: 20px;
+  height: 20px;
+  color: #DC2626;
+  flex-shrink: 0;
+}
+
+.rejection-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #991B1B;
+  margin: 0;
+}
+
+.rejection-reason {
+  font-size: 14px;
+  color: #7F1D1D;
+  margin: 0;
+  padding-left: 30px;
+  line-height: 1.6;
+  font-style: italic;
+}
+
+.rejection-date {
+  font-size: 12px;
+  color: #991B1B;
+  padding-left: 30px;
+  font-weight: 500;
+}
+
+/* Responsive para popup de éxito */
+@media (max-width: 768px) {
+  .success-popup-overlay {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+  }
+
+  .success-popup {
+    max-width: 100%;
+    padding: 16px 20px;
+  }
+
+  .success-title {
+    font-size: 16px;
+  }
+
+  .success-message {
+    font-size: 13px;
+  }
+
+  .rejection-info-box {
+    padding: 14px;
+  }
+
+  .rejection-reason {
+    padding-left: 0;
+  }
+
+  .rejection-date {
+    padding-left: 0;
   }
 }

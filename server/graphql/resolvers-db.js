@@ -175,15 +175,17 @@ const resolvers = {
       return result.rows;
     },
 
-    // Obtener usuarios disponibles para seleccionar como firmantes
+    // Obtener usuarios disponibles para seleccionar como firmantes (incluye el usuario actual para autofirma)
     availableSigners: async (_, __, { user }) => {
       if (!user) throw new Error('No autenticado');
 
+      // Incluir al usuario actual para permitir autofirma
       const result = await query(`
         SELECT id, name, email, role
         FROM users
-        WHERE id != $1
-        ORDER BY name ASC
+        ORDER BY
+          CASE WHEN id = $1 THEN 0 ELSE 1 END,
+          name ASC
       `, [user.id]);
 
       return result.rows;
@@ -440,10 +442,10 @@ const resolvers = {
     rejectDocument: async (_, { documentId, reason }, { user }) => {
       if (!user) throw new Error('No autenticado');
 
-      // Actualizar la firma del usuario a rechazada
+      // Actualizar la firma del usuario a rechazada con la razón
       await query(
-        'UPDATE signatures SET status = $1 WHERE document_id = $2 AND signer_id = $3',
-        ['rejected', documentId, user.id]
+        'UPDATE signatures SET status = $1, rejection_reason = $2 WHERE document_id = $3 AND signer_id = $4',
+        ['rejected', reason || '', documentId, user.id]
       );
 
       // Recalcular el estado del documento basado en todas las firmas
