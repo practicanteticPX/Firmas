@@ -55,6 +55,7 @@ const typeDefs = gql`
     userAgent: String
     status: String!
     rejectionReason: String
+    rejectedAt: String
     signedAt: String
     createdAt: String!
     updatedAt: String!
@@ -89,6 +90,8 @@ const typeDefs = gql`
     myDocuments: [Document!]!
     pendingDocuments: [Document!]!
     signedDocuments: [Document!]!
+    rejectedByMeDocuments: [Document!]!
+    rejectedByOthersDocuments: [Document!]!
     documentsByStatus(status: String!): [Document!]!
 
     # Firmas

@@ -36,9 +36,12 @@ function Dashboard({ user, onLogout }) {
   const [pendingDocuments, setPendingDocuments] = useState([]);
   const [signedDocuments, setSignedDocuments] = useState([]);
   const [myDocuments, setMyDocuments] = useState([]);
+  const [rejectedByMe, setRejectedByMe] = useState([]);
+  const [rejectedByOthers, setRejectedByOthers] = useState([]);
   const [loadingPending, setLoadingPending] = useState(false);
   const [loadingSigned, setLoadingSigned] = useState(false);
   const [loadingMy, setLoadingMy] = useState(false);
+  const [loadingRejected, setLoadingRejected] = useState(false);
   const [viewingDocument, setViewingDocument] = useState(null);
   const [isViewingPending, setIsViewingPending] = useState(false);
   const [showSignConfirm, setShowSignConfirm] = useState(false);
@@ -160,6 +163,13 @@ function Dashboard({ user, onLogout }) {
   useEffect(() => {
     if (activeTab === 'upload') {
       loadAvailableSigners();
+    }
+  }, [activeTab]);
+
+  // Cargar documentos rechazados al montar o cambiar de tab
+  useEffect(() => {
+    if (activeTab === 'rejected') {
+      loadRejectedDocuments();
     }
   }, [activeTab]);
 
@@ -362,6 +372,85 @@ function Dashboard({ user, onLogout }) {
       setError('Error al cargar firmantes disponibles');
     } finally {
       setLoadingSigners(false);
+    }
+  };
+
+  /**
+   * Cargar documentos rechazados desde GraphQL
+   */
+  const loadRejectedDocuments = async () => {
+    setLoadingRejected(true);
+    try {
+      const token = localStorage.getItem('token');
+
+      const response = await axios.post(
+        API_URL,
+        {
+          query: `
+            query {
+              rejectedByMeDocuments {
+                id
+                title
+                description
+                fileName
+                filePath
+                fileSize
+                status
+                createdAt
+                signatures {
+                  id
+                  status
+                  rejectionReason
+                  rejectedAt
+                  signer {
+                    id
+                    name
+                    email
+                  }
+                }
+              }
+              rejectedByOthersDocuments {
+                id
+                title
+                description
+                fileName
+                filePath
+                fileSize
+                status
+                createdAt
+                signatures {
+                  id
+                  status
+                  rejectionReason
+                  rejectedAt
+                  signer {
+                    id
+                    name
+                    email
+                  }
+                }
+              }
+            }
+          `
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+
+      if (response.data.errors) {
+        throw new Error(response.data.errors[0].message);
+      }
+
+      setRejectedByMe(response.data.data.rejectedByMeDocuments || []);
+      setRejectedByOthers(response.data.data.rejectedByOthersDocuments || []);
+    } catch (err) {
+      console.error('Error al cargar documentos rechazados:', err);
+      setError('Error al cargar documentos rechazados');
+    } finally {
+      setLoadingRejected(false);
     }
   };
 
@@ -1269,6 +1358,15 @@ function Dashboard({ user, onLogout }) {
                 </svg>
                 Mis documentos
               </button>
+              <button className={`ds-nav-item ${activeTab === 'rejected' ? 'active' : ''}`} onClick={() => setActiveTab('rejected')}>
+                <svg className="ds-nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                Rechazados
+                {(rejectedByMe.length + rejectedByOthers.length) > 0 && (
+                  <span className="badge">{rejectedByMe.length + rejectedByOthers.length}</span>
+                )}
+              </button>
             </nav>
           </aside>
 
@@ -1341,6 +1439,18 @@ function Dashboard({ user, onLogout }) {
               Mis Documentos
               {!loadingMy && myDocuments.length > 0 && (
                 <span className="badge badge-info">{myDocuments.length}</span>
+              )}
+            </button>
+            <button
+              className={`tab ${activeTab === 'rejected' ? 'active' : ''}`}
+              onClick={() => setActiveTab('rejected')}
+            >
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              Rechazados
+              {!loadingRejected && (rejectedByMe.length + rejectedByOthers.length) > 0 && (
+                <span className="badge badge-danger">{rejectedByMe.length + rejectedByOthers.length}</span>
               )}
             </button>
           </div>
@@ -2070,6 +2180,156 @@ function Dashboard({ user, onLogout }) {
                     );
                   })}
                 </div>
+              )}
+            </div>
+          )}
+
+          {/* Rejected Documents Section */}
+          {activeTab === 'rejected' && (
+            <div className="section rejected-section">
+              <div className="section-header-minimal">
+                <div>
+                  <h2 className="section-title">Documentos Rechazados</h2>
+                  <p className="section-subtitle">
+                    Documentos que han sido rechazados por ti o por otros firmantes
+                  </p>
+                </div>
+              </div>
+
+              {loadingRejected ? (
+                <div className="loading-state-modern">
+                  <div className="spinner-modern"></div>
+                  <p>Cargando documentos rechazados...</p>
+                </div>
+              ) : (
+                <>
+                  {/* Documentos que YO rechacé */}
+                  <div className="rejected-subsection">
+                    <h3 className="subsection-title">
+                      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                      Documentos que rechacé ({rejectedByMe.length})
+                    </h3>
+
+                    {rejectedByMe.length === 0 ? (
+                      <div className="empty-state-modern">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                        <p>No has rechazado ningún documento</p>
+                      </div>
+                    ) : (
+                      <div className="rejected-docs-list">
+                        {rejectedByMe.map(doc => {
+                          const myRejection = doc.signatures?.find(sig => sig.status === 'rejected');
+
+                          return (
+                            <div key={doc.id} className="rejected-doc-card">
+                              <div className="rejected-doc-header">
+                                <h3 className="rejected-doc-title">{doc.title}</h3>
+                                <span className="rejected-badge rejected-by-me-badge">
+                                  Rechazado por ti
+                                </span>
+                              </div>
+
+                              <p className="rejected-doc-date">
+                                Rechazado el {formatDateTime(myRejection?.rejectedAt || myRejection?.signedAt || doc.createdAt)}
+                              </p>
+
+                              {myRejection?.rejectionReason && (
+                                <div className="rejected-reason-container">
+                                  <strong className="rejected-reason-label">Tu justificación:</strong>
+                                  <div className="rejected-reason-text">
+                                    "{myRejection.rejectionReason}"
+                                  </div>
+                                </div>
+                              )}
+
+                              <button
+                                className="rejected-view-btn"
+                                onClick={() => handleViewDocument(doc)}
+                              >
+                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                  <path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                  <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
+                                Ver documento
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Documentos rechazados por OTROS */}
+                  <div className="rejected-subsection">
+                    <h3 className="subsection-title">
+                      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M17 21V19C17 17.9391 16.5786 16.9217 15.8284 16.1716C15.0783 15.4214 14.0609 15 13 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21M23 21V19C22.9993 18.1137 22.7044 17.2528 22.1614 16.5523C21.6184 15.8519 20.8581 15.3516 20 15.13M16 3.13C16.8604 3.35031 17.623 3.85071 18.1676 4.55232C18.7122 5.25392 19.0078 6.11683 19.0078 7.005C19.0078 7.89317 18.7122 8.75608 18.1676 9.45768C17.623 10.1593 16.8604 10.6597 16 10.88M13 7C13 9.20914 11.2091 11 9 11C6.79086 11 5 9.20914 5 7C5 4.79086 6.79086 3 9 3C11.2091 3 13 4.79086 13 7Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                      Rechazados por otros firmantes ({rejectedByOthers.length})
+                    </h3>
+
+                    {rejectedByOthers.length === 0 ? (
+                      <div className="empty-state-modern">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                        <p>No tienes documentos rechazados por otros</p>
+                      </div>
+                    ) : (
+                      <div className="rejected-docs-list">
+                        {rejectedByOthers.map(doc => {
+                          const rejection = doc.signatures?.find(sig => sig.status === 'rejected');
+
+                          return (
+                            <div key={doc.id} className="rejected-doc-card">
+                              <div className="rejected-doc-header">
+                                <h3 className="rejected-doc-title">{doc.title}</h3>
+                                <span className="rejected-badge rejected-by-others-badge">
+                                  Rechazado
+                                </span>
+                              </div>
+
+                              <p className="rejected-doc-date">
+                                Rechazado el {formatDateTime(rejection?.rejectedAt || rejection?.signedAt || doc.createdAt)}
+                              </p>
+
+                              <div className="rejector-info">
+                                <strong className="rejector-label">Rechazado por:</strong>
+                                <p className="rejector-name">
+                                  {rejection?.signer?.name || 'Usuario'} ({rejection?.signer?.email})
+                                </p>
+                              </div>
+
+                              {rejection?.rejectionReason && (
+                                <div className="rejected-reason-container">
+                                  <strong className="rejected-reason-label">Razón del rechazo:</strong>
+                                  <div className="rejected-reason-text">
+                                    "{rejection.rejectionReason}"
+                                  </div>
+                                </div>
+                              )}
+
+                              <button
+                                className="rejected-view-btn"
+                                onClick={() => handleViewDocument(doc)}
+                              >
+                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                  <path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                  <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
+                                Ver documento
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </>
               )}
             </div>
           )}

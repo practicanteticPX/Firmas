@@ -130,6 +130,66 @@ const resolvers = {
       return result.rows;
     },
 
+    // Obtener documentos rechazados por el usuario autenticado
+    rejectedByMeDocuments: async (_, __, { user }) => {
+      if (!user) throw new Error('No autenticado');
+
+      const result = await query(`
+        SELECT DISTINCT
+          d.*,
+          u.name as uploaded_by_name,
+          u.email as uploaded_by_email,
+          s.rejection_reason,
+          s.rejected_at,
+          s.signed_at,
+          s.created_at,
+          COALESCE(s.rejected_at, s.signed_at, s.created_at) as sort_date
+        FROM documents d
+        JOIN signatures s ON d.id = s.document_id
+        JOIN users u ON d.uploaded_by = u.id
+        WHERE s.signer_id = $1
+          AND s.status = 'rejected'
+        ORDER BY sort_date DESC
+      `, [user.id]);
+
+      return result.rows;
+    },
+
+    // Obtener documentos rechazados por otros firmantes
+    rejectedByOthersDocuments: async (_, __, { user }) => {
+      if (!user) throw new Error('No autenticado');
+
+      const result = await query(`
+        SELECT DISTINCT
+          d.*,
+          u.name as uploaded_by_name,
+          u.email as uploaded_by_email,
+          rejector_sig.rejection_reason,
+          rejector_sig.rejected_at,
+          rejector_sig.signed_at,
+          rejector_sig.created_at,
+          rejector_user.id as rejected_by_id,
+          rejector_user.name as rejected_by_name,
+          rejector_user.email as rejected_by_email,
+          COALESCE(rejector_sig.rejected_at, rejector_sig.signed_at, rejector_sig.created_at) as sort_date
+        FROM documents d
+        JOIN users u ON d.uploaded_by = u.id
+        -- Mi firma (debe existir y yo NO soy quien rechazó)
+        JOIN signatures my_sig ON d.id = my_sig.document_id
+          AND my_sig.signer_id = $1
+        -- La firma del que rechazó (alguien más, no yo)
+        JOIN signatures rejector_sig ON d.id = rejector_sig.document_id
+          AND rejector_sig.status = 'rejected'
+          AND rejector_sig.signer_id != $1
+        -- Usuario que rechazó
+        JOIN users rejector_user ON rejector_sig.signer_id = rejector_user.id
+        WHERE d.status = 'rejected'
+        ORDER BY sort_date DESC
+      `, [user.id]);
+
+      return result.rows;
+    },
+
     // Obtener documentos por estado
     documentsByStatus: async (_, { status }, { user }) => {
       if (!user) throw new Error('No autenticado');
@@ -442,10 +502,12 @@ const resolvers = {
     rejectDocument: async (_, { documentId, reason }, { user }) => {
       if (!user) throw new Error('No autenticado');
 
-      // Actualizar la firma del usuario a rechazada con la razón
+      const now = new Date().toISOString();
+
+      // Actualizar la firma del usuario a rechazada con la razón y fecha
       await query(
-        'UPDATE signatures SET status = $1, rejection_reason = $2 WHERE document_id = $3 AND signer_id = $4',
-        ['rejected', reason || '', documentId, user.id]
+        'UPDATE signatures SET status = $1, rejection_reason = $2, rejected_at = $3, signed_at = $3 WHERE document_id = $4 AND signer_id = $5',
+        ['rejected', reason || '', now, documentId, user.id]
       );
 
       // Recalcular el estado del documento basado en todas las firmas
@@ -609,6 +671,7 @@ const resolvers = {
     ipAddress: (parent) => parent.ip_address,
     userAgent: (parent) => parent.user_agent,
     rejectionReason: (parent) => parent.rejection_reason,
+    rejectedAt: (parent) => parent.rejected_at,
     signedAt: (parent) => parent.signed_at,
     createdAt: (parent) => parent.created_at,
     updatedAt: (parent) => parent.updated_at,

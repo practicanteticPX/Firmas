@@ -6003,3 +6003,149 @@
     padding-left: 0;
   }
 }
+
+/* ========================================
+   SECCIÓN DE DOCUMENTOS RECHAZADOS
+   ======================================== */
+
+.rejected-section {
+  padding: 24px;
+}
+
+.rejected-subsection {
+  margin-bottom: 48px;
+}
+
+.subsection-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.subsection-title svg {
+  width: 22px;
+  height: 22px;
+  color: #DC2626;
+}
+
+/* Tarjetas de documentos rechazados por mí */
+.rejected-by-me-card {
+  border-left: 4px solid #DC2626 !important;
+  background: linear-gradient(135deg, #FEF2F2 0%, #ffffff 100%);
+}
+
+.rejected-by-me-card:hover {
+  border-left-color: #B91C1C !important;
+  box-shadow: 0 8px 16px -4px rgba(220, 38, 38, 0.15);
+}
+
+/* Tarjetas de documentos rechazados por otros */
+.rejected-by-others-card {
+  border-left: 4px solid #F59E0B !important;
+  background: linear-gradient(135deg, #FFFBEB 0%, #ffffff 100%);
+}
+
+.rejected-by-others-card:hover {
+  border-left-color: #D97706 !important;
+  box-shadow: 0 8px 16px -4px rgba(245, 158, 11, 0.15);
+}
+
+/* Caja de razón del rechazo */
+.rejection-reason-box {
+  background: linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 100%);
+  border: 1.5px solid #FECACA;
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-top: 12px;
+  margin-bottom: 12px;
+}
+
+.rejection-reason-box.my-rejection {
+  background: linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%);
+  border-color: #93C5FD;
+}
+
+.rejection-reason-box strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #991B1B;
+  margin-bottom: 6px;
+}
+
+.rejection-reason-box.my-rejection strong {
+  color: #1E40AF;
+}
+
+.rejection-reason-box p {
+  font-size: 14px;
+  color: #4B5563;
+  font-style: italic;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Caja de información del firmante que rechazó */
+.rejector-info-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  background: linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%);
+  border: 1px solid #D1D5DB;
+  border-radius: 8px;
+  margin-top: 12px;
+  margin-bottom: 8px;
+}
+
+.rejector-info-box svg {
+  width: 24px;
+  height: 24px;
+  color: #6B7280;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.rejector-info-box strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 4px;
+}
+
+.rejector-info-box p {
+  font-size: 13px;
+  color: #1F2937;
+  margin: 0;
+}
+
+/* Badge para contadores */
+.badge-danger {
+  background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%);
+  color: #991B1B;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .rejected-section {
+    padding: 16px;
+  }
+
+  .rejected-subsection {
+    margin-bottom: 32px;
+  }
+
+  .subsection-title {
+    font-size: 16px;
+  }
+
+  .rejection-reason-box,
+  .rejector-info-box {
+    padding: 12px;
+  }
+}
