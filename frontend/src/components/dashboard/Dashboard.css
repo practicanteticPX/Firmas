@@ -1295,7 +1295,7 @@
   max-height: 85vh;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow-y: auto;
   animation: slideUp 0.25s ease-out;
 }
 
@@ -1357,7 +1357,8 @@
   background: #ffffff;
   border: 1px solid #E5E7EB;
   border-radius: 10px;
-  overflow: hidden;
+  overflow-y: auto;
+  max-height: 400px;
 }
 
 .signer-item-modal {
@@ -2215,11 +2216,37 @@
 }
 
 .signers-list {
-  max-height: 400px;
+  display: flex !important;
+  flex-direction: column !important;
+  max-height: 140px !important;
+  min-height: 100px;
   background: white;
   border-radius: 8px;
   border: 1px solid #E5E7EB;
-  overflow-y: auto;
+  overflow-y: scroll !important;
+  overflow-x: hidden;
+  width: 100%;
+  position: relative;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Asegurar que el scroll funcione en todos los navegadores */
+.signers-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.signers-list::-webkit-scrollbar-track {
+  background: #F3F4F6;
+  border-radius: 4px;
+}
+
+.signers-list::-webkit-scrollbar-thumb {
+  background: #9CA3AF;
+  border-radius: 4px;
+}
+
+.signers-list::-webkit-scrollbar-thumb:hover {
+  background: #6B7280;
 }
 
 .signers-empty {
@@ -2229,13 +2256,17 @@
 }
 
 .signer-item {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 12px 16px;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: left;
+  justify-content: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
   border-bottom: 1px solid #F3F4F6;
   cursor: pointer;
   transition: all 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .signer-item:last-child {
@@ -2283,8 +2314,8 @@
 }
 
 .signer-avatar {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
   color: white;
@@ -2292,7 +2323,7 @@
   align-items: center;
   justify-content: center;
   font-weight: 600;
-  font-size: 16px;
+  font-size: 14px;
   flex-shrink: 0;
 }
 
@@ -2302,7 +2333,7 @@
 }
 
 .signer-name {
-  font-weight: 500;
+  font-weight: 600;
   color: #111827;
   margin: 0;
   font-size: 14px;
@@ -2310,6 +2341,8 @@
   align-items: center;
   gap: 8px;
   overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 /* Badge "Tú" para identificar al usuario actual */
@@ -2331,11 +2364,25 @@
 
 .signer-email {
   color: #6B7280;
-  font-size: 13px;
+  font-size: 12px;
   margin: 2px 0 0 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.signer-selected {
+  width: 24px;
+  height: 24px;
+  background: #10B981;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  flex-shrink: 0;
 }
 
 .signer-role {
@@ -6155,4 +6202,191 @@
   .rejector-info-box {
     padding: 12px;
   }
+}
+
+/* Estilos para razón de rechazo compacta con botón */
+.rejection-info-compact {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  background: #FEF2F2;
+  border-left: 3px solid #DC2626;
+  border-radius: 8px;
+  margin-top: 8px;
+}
+
+.rejection-by-text {
+  font-size: 13px;
+  color: #991B1B;
+  font-weight: 500;
+}
+
+.btn-view-reason {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #DC2626;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-view-reason:hover {
+  background: #B91C1C;
+  transform: translateY(-1px);
+}
+
+.btn-view-reason svg {
+  flex-shrink: 0;
+}
+
+/* Popup de razón de rechazo */
+.rejection-popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 20px;
+}
+
+.rejection-popup-modal {
+  background: white;
+  border-radius: 16px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.rejection-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid #E5E7EB;
+}
+
+.rejection-popup-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.rejection-popup-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: #F3F4F6;
+  color: #6B7280;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.rejection-popup-close:hover {
+  background: #E5E7EB;
+  color: #111827;
+}
+
+.rejection-popup-close svg {
+  width: 20px;
+  height: 20px;
+}
+
+.rejection-popup-body {
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.rejection-popup-info {
+  margin-bottom: 16px;
+}
+
+.rejection-popup-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #6B7280;
+  margin: 0 0 4px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.rejection-popup-value {
+  font-size: 15px;
+  color: #111827;
+  margin: 0;
+  font-weight: 500;
+}
+
+.rejection-popup-reason {
+  margin-top: 20px;
+}
+
+.rejection-popup-reason-box {
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  border-left: 3px solid #DC2626;
+  border-radius: 8px;
+  padding: 16px;
+  color: #991B1B;
+  font-size: 14px;
+  line-height: 1.6;
+  margin-top: 8px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.rejection-popup-footer {
+  padding: 16px 24px;
+  border-top: 1px solid #E5E7EB;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-close-rejection {
+  padding: 10px 20px;
+  background: #F3F4F6;
+  color: #374151;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-close-rejection:hover {
+  background: #E5E7EB;
 }

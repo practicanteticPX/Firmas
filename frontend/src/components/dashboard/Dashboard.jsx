@@ -84,6 +84,9 @@ function Dashboard({ user, onLogout }) {
   // Estado para controlar "ver más" en firmantes de Mis Documentos
   const [expandedSigners, setExpandedSigners] = useState({});
 
+  // Estado para popup de razón de rechazo
+  const [rejectionReasonPopup, setRejectionReasonPopup] = useState(null);
+
   // Estados para Stepper funcional de MUI (3 pasos)
   const steps = ['Cargar documentos', 'Añadir firmantes', 'Enviar'];
   const [activeStep, setActiveStep] = useState(0);
@@ -161,35 +164,22 @@ function Dashboard({ user, onLogout }) {
                         showRejectSuccess ||
                         showQuickSignConfirm ||
                         managingDocument ||
-                        confirmDeleteOpen;
+                        confirmDeleteOpen ||
+                        rejectionReasonPopup;
 
     if (hasModalOpen) {
-      // Guardar el scroll actual para restaurarlo después
-      const scrollY = window.scrollY;
+      // Bloquear scroll simplemente con overflow hidden
       document.body.style.overflow = 'hidden';
-      document.body.style.position = 'fixed';
-      document.body.style.top = `-${scrollY}px`;
-      document.body.style.width = '100%';
     } else {
       // Restaurar scroll
-      const scrollY = document.body.style.top;
       document.body.style.overflow = '';
-      document.body.style.position = '';
-      document.body.style.top = '';
-      document.body.style.width = '';
-      if (scrollY) {
-        window.scrollTo(0, parseInt(scrollY || '0') * -1);
-      }
     }
 
     // Cleanup al desmontar
     return () => {
       document.body.style.overflow = '';
-      document.body.style.position = '';
-      document.body.style.top = '';
-      document.body.style.width = '';
     };
-  }, [viewingDocument, showSignConfirm, showRejectConfirm, showRejectSuccess, showQuickSignConfirm, managingDocument, confirmDeleteOpen]);
+  }, [viewingDocument, showSignConfirm, showRejectConfirm, showRejectSuccess, showQuickSignConfirm, managingDocument, confirmDeleteOpen, rejectionReasonPopup]);
 
   // Cargar documentos pendientes al montar o cambiar de tab
   useEffect(() => {
@@ -2128,16 +2118,25 @@ function Dashboard({ user, onLogout }) {
                             if (!rejectedSignature) return null;
 
                             return (
-                              <div className="rejection-info-box">
-                                <div className="rejection-header">
-                                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M12 9V13M12 17H12.01M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                              <div className="rejection-info-compact">
+                                <span className="rejection-by-text">
+                                  Rechazado por {rejectedSignature.signer?.name || rejectedSignature.signer?.email}
+                                </span>
+                                <button
+                                  className="btn-view-reason"
+                                  onClick={() => setRejectionReasonPopup({
+                                    title: doc.title,
+                                    rejectedBy: rejectedSignature.signer?.name || rejectedSignature.signer?.email,
+                                    reason: rejectedSignature.rejectionReason,
+                                    rejectedAt: rejectedSignature.rejectedAt
+                                  })}
+                                >
+                                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{width: '16px', height: '16px'}}>
+                                    <path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                   </svg>
-                                  <span className="rejection-title">
-                                    Rechazado por {rejectedSignature.signer?.name || rejectedSignature.signer?.email}
-                                  </span>
-                                </div>
-                                <p className="rejection-reason">{rejectedSignature.rejectionReason}</p>
+                                  Ver razón
+                                </button>
                               </div>
                             );
                           })()}
@@ -2272,16 +2271,25 @@ function Dashboard({ user, onLogout }) {
                             if (!rejectedSignature) return null;
 
                             return (
-                              <div className="rejection-info-box">
-                                <div className="rejection-header">
-                                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M12 9V13M12 17H12.01M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                              <div className="rejection-info-compact">
+                                <span className="rejection-by-text">
+                                  Rechazado por {rejectedSignature.signer?.name || rejectedSignature.signer?.email}
+                                </span>
+                                <button
+                                  className="btn-view-reason"
+                                  onClick={() => setRejectionReasonPopup({
+                                    title: doc.title,
+                                    rejectedBy: rejectedSignature.signer?.name || rejectedSignature.signer?.email,
+                                    reason: rejectedSignature.rejectionReason,
+                                    rejectedAt: rejectedSignature.rejectedAt
+                                  })}
+                                >
+                                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{width: '16px', height: '16px'}}>
+                                    <path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                   </svg>
-                                  <span className="rejection-title">
-                                    Rechazado por {rejectedSignature.signer?.name || rejectedSignature.signer?.email}
-                                  </span>
-                                </div>
-                                <p className="rejection-reason">{rejectedSignature.rejectionReason}</p>
+                                  Ver razón
+                                </button>
                               </div>
                             );
                           })()}
@@ -2399,22 +2407,31 @@ function Dashboard({ user, onLogout }) {
                               <span className="doc-created-text">Creado el {formatDateTime(doc.createdAt)}</span>
                             </div>
 
-                            {/* Mostrar justificación de rechazo si el documento fue rechazado */}
+                            {/* Botón para ver razón de rechazo si el documento fue rechazado */}
                             {doc.status === 'rejected' && (() => {
                               const rejectedSignature = signatures.find(sig => sig.status === 'rejected' && sig.rejectionReason);
                               if (!rejectedSignature) return null;
 
                               return (
-                                <div className="rejection-info-box">
-                                  <div className="rejection-header">
-                                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                      <path d="M12 9V13M12 17H12.01M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                <div className="rejection-info-compact">
+                                  <span className="rejection-by-text">
+                                    Rechazado por {rejectedSignature.signer?.name || rejectedSignature.signer?.email}
+                                  </span>
+                                  <button
+                                    className="btn-view-reason"
+                                    onClick={() => setRejectionReasonPopup({
+                                      title: doc.title,
+                                      rejectedBy: rejectedSignature.signer?.name || rejectedSignature.signer?.email,
+                                      reason: rejectedSignature.rejectionReason,
+                                      rejectedAt: rejectedSignature.rejectedAt
+                                    })}
+                                  >
+                                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{width: '16px', height: '16px'}}>
+                                      <path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                      <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                     </svg>
-                                    <span className="rejection-title">
-                                      Rechazado por {rejectedSignature.signer.name || rejectedSignature.signer.email}
-                                    </span>
-                                  </div>
-                                  <p className="rejection-reason">{rejectedSignature.rejectionReason}</p>
+                                    Ver razón
+                                  </button>
                                 </div>
                               );
                             })()}
@@ -3016,7 +3033,7 @@ function Dashboard({ user, onLogout }) {
                                     <div className="signer-email">{signer.email}</div>
                                   </div>
                                   {modalSelectedSigners.includes(signer.id) && (
-                                    <div className="signer-selected">âœ”</div>
+                                    <div className="signer-selected">✓</div>
                                   )}
                                 </div>
                               ))
@@ -3083,6 +3100,49 @@ function Dashboard({ user, onLogout }) {
                 style={{background:"#fee2e2"}}
                 >
                 {deleting ? 'Eliminando...' : 'Eliminar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Popup para mostrar razón de rechazo */}
+      {rejectionReasonPopup && (
+        <div className="rejection-popup-overlay" onClick={() => setRejectionReasonPopup(null)}>
+          <div className="rejection-popup-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="rejection-popup-header">
+              <h3 className="rejection-popup-title">Razón del rechazo</h3>
+              <button className="rejection-popup-close" onClick={() => setRejectionReasonPopup(null)}>
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
+            </div>
+            <div className="rejection-popup-body">
+              <div className="rejection-popup-info">
+                <p className="rejection-popup-label">Documento:</p>
+                <p className="rejection-popup-value">{rejectionReasonPopup.title}</p>
+              </div>
+              <div className="rejection-popup-info">
+                <p className="rejection-popup-label">Rechazado por:</p>
+                <p className="rejection-popup-value">{rejectionReasonPopup.rejectedBy}</p>
+              </div>
+              {rejectionReasonPopup.rejectedAt && (
+                <div className="rejection-popup-info">
+                  <p className="rejection-popup-label">Fecha:</p>
+                  <p className="rejection-popup-value">{formatDateTime(rejectionReasonPopup.rejectedAt)}</p>
+                </div>
+              )}
+              <div className="rejection-popup-reason">
+                <p className="rejection-popup-label">Justificación:</p>
+                <div className="rejection-popup-reason-box">
+                  {rejectionReasonPopup.reason}
+                </div>
+              </div>
+            </div>
+            <div className="rejection-popup-footer">
+              <button className="btn-close-rejection" onClick={() => setRejectionReasonPopup(null)}>
+                Cerrar
               </button>
             </div>
           </div>
