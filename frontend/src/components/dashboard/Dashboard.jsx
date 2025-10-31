@@ -251,6 +251,18 @@ function Dashboard({ user, onLogout }) {
                 status
                 signedAt
                 signatureType
+                signatures {
+                  id
+                  status
+                  signedAt
+                  rejectionReason
+                  rejectedAt
+                  signer {
+                    id
+                    name
+                    email
+                  }
+                }
               }
             }
           `
@@ -2048,11 +2060,11 @@ function Dashboard({ user, onLogout }) {
 
           {/* Signed Documents Section - Minimal */}
           {activeTab === 'signed' && (
-            <div className="section pending-section-minimal">
+            <div className="section my-documents-section-clean">
               <div className="section-header-minimal">
                 <div>
                   <h2 className="section-title-minimal">Documentos Firmados</h2>
-                  <p className="section-subtitle-minimal">{signedDocuments.length} documento{signedDocuments.length !== 1 ? 's' : ''} completado{signedDocuments.length !== 1 ? 's' : ''}</p>
+                  <p className="section-subtitle-minimal">{signedDocuments.length} documento{signedDocuments.length !== 1 ? 's' : ''}</p>
                 </div>
               </div>
 
@@ -2072,65 +2084,107 @@ function Dashboard({ user, onLogout }) {
                   <p className="empty-text-minimal">Los documentos que firmes aparecerán aquí</p>
                 </div>
               ) : (
-                <div className="documents-grid-minimal">
-                  {signedDocuments.map((doc) => (
-                    <div key={doc.id} className="doc-card-minimal">
-                      <div className="doc-card-header-minimal">
-                        <div className="doc-icon-minimal">
-                          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            <path d="M14 2V8H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        </div>
-                        <span className="doc-badge-minimal signed" style={{color: 'black'}}>Firmado</span>
-                      </div>
+                <div className="my-docs-grid-clean">
+                  {signedDocuments.map((doc) => {
+                    const getStatusConfig = (status) => {
+                      const statusMap = {
+                        pending: { label: 'Pendiente', color: '#92400E', bg: '#FEF3C7' },
+                        in_progress: { label: 'En progreso', color: '#954026', bg: '#fef3c7' },
+                        completed: { label: 'Completado', color: '#065F46', bg: '#D1FAE5'},
+                        rejected: { label: 'Rechazado', color: '#991B1B', bg: '#FEE2E2' }
+                      };
+                      return statusMap[status] || statusMap.completed;
+                    };
 
-                      <div className="doc-card-body-minimal">
-                        <h3 className="doc-card-title-minimal">{doc.title}</h3>
-                        {doc.description && (
-                          <p className="doc-card-description-minimal">{doc.description}</p>
-                        )}
-                        <div className="doc-card-meta-minimal">
-                          {doc.signedAt && (
-                            <div className="doc-meta-item-minimal">
-                              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                              </svg>
-                              <span>Firmado el {formatDateTime(doc.signedAt)}</span>
+                    const statusConfig = getStatusConfig(doc.status);
+                    const signatures = doc.signatures || [];
+
+                    return (
+                      <div key={doc.id} className="my-doc-card-reference">
+                        <div className="doc-content-wrapper">
+                          <div className="doc-header-row">
+                            <h3 className="doc-title-reference">{doc.title}</h3>
+                            <div className="status-badge-clean" style={{
+                              color: statusConfig.color,
+                              backgroundColor: statusConfig.bg
+                            }}>
+                              {statusConfig.label}
                             </div>
-                          )}
-                          <div className="doc-meta-item-minimal">
-                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21M16 7C16 9.20914 14.2091 11 12 11C9.79086 11 8 9.20914 8 7C8 4.79086 9.79086 3 12 3C14.2091 3 16 4.79086 16 7Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                            <span>{doc.uploadedBy?.name || doc.uploadedBy?.email || 'Desconocido'}</span>
+                          </div>
+
+                          <div className="doc-meta-row">
+                            <span className="doc-created-text">
+                              {doc.signedAt ? `Firmado el ${formatDateTime(doc.signedAt)}` : `Creado el ${formatDateTime(doc.createdAt)}`}
+                            </span>
+                          </div>
+
+                          {doc.status === 'rejected' && (() => {
+                            const rejectedSignature = signatures.find(sig => sig.status === 'rejected' && sig.rejectionReason);
+                            if (!rejectedSignature) return null;
+
+                            return (
+                              <div className="rejection-info-box">
+                                <div className="rejection-header">
+                                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M12 9V13M12 17H12.01M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                  </svg>
+                                  <span className="rejection-title">
+                                    Rechazado por {rejectedSignature.signer?.name || rejectedSignature.signer?.email}
+                                  </span>
+                                </div>
+                                <p className="rejection-reason">{rejectedSignature.rejectionReason}</p>
+                              </div>
+                            );
+                          })()}
+
+                          <div className="doc-signers-row">
+                            {(expandedSigners[doc.id] ? signatures : signatures.slice(0, 3)).map((sig) => {
+                              const getSignerStatusColor = (status) => {
+                                if (status === 'signed') return '#10B981';
+                                if (status === 'rejected') return '#EF4444';
+                                return '#F59E0B';
+                              };
+
+                              return (
+                                <div key={sig.id} className="signer-item-horizontal">
+                                  <span
+                                    className="signer-dot"
+                                    style={{ backgroundColor: getSignerStatusColor(sig.status) }}
+                                  ></span>
+                                  <span className="signer-name">{sig.signer?.name || sig.signer?.email}</span>
+                                </div>
+                              );
+                            })}
+                            {signatures.length > 3 && (
+                              <button
+                                className="btn-ver-todos"
+                                onClick={() => setExpandedSigners({
+                                  ...expandedSigners,
+                                  [doc.id]: !expandedSigners[doc.id]
+                                })}
+                              >
+                                {expandedSigners[doc.id] ? '- ver menos' : '+ ver todos'}
+                              </button>
+                            )}
                           </div>
                         </div>
-                      </div>
 
-                      <div className="doc-card-actions-minimal">
-                        <button
-                          className="btn-minimal-secondary"
-                          onClick={() => handleViewDocument(doc)}
-                        >
-                          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                          Ver documento
-                        </button>
-                        <button
-                          className="btn-minimal-primary"
-                          onClick={() => window.open(getDocumentUrl(doc.filePath), '_blank')}
-                        >
-                          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15M7 10L12 15M12 15L17 10M12 15V3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                          Descargar
-                        </button>
+                        <div className="doc-actions-clean">
+                          <button
+                            className="btn-action-clean"
+                            onClick={() => handleViewDocument(doc)}
+                            title="Ver documento"
+                            style={{marginTop: '-1.5vw'}}
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                              <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
