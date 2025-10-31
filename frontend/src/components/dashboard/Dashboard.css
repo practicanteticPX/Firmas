@@ -290,15 +290,21 @@
 
 .badge {
   position: absolute;
-  top: -6px;
-  right: -6px;
+  top: -8px;
+  right: -8px;
   background: linear-gradient(135deg, #f97316 0%, #dc2626 100%);
   color: white;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
-  padding: 3px 8px;
-  border-radius: 20px;
-  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.4);
+  padding: 4px 7px;
+  border-radius: 10px;
+  min-width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.5), 0 0 0 2px white;
+  z-index: 10;
 }
 
 .badge-info {
@@ -389,7 +395,9 @@
 
 #document-title {
   width: 90%;
+  text-indent: 0;
 }
+
 
 .form-input:focus {
   outline: none;
@@ -3154,10 +3162,10 @@
 
 /* Secci�n principal Upload */
 .upload-section-zapsign {
-  width: 150vw;
+  width: 100%;
+  max-width: 1024px;
   margin: 0 auto;
   padding: 32px;
-  z-index: 9999999999999999999999999999999999999999999999999999999999;
 }
 
 /* Stepper numerado horizontal */
@@ -3230,8 +3238,7 @@
   border-radius: 16px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
   overflow: hidden;
-  width: 150%;
-  z-index: 99999999999999999999999999999999;
+  width: 100%;
 }
 
 /* Header del card */
@@ -3976,6 +3983,7 @@
   font-weight: 500;
   font-size: 14px;
   transition: all 0.2s ease;
+  position: relative;
 }
 
 .ds-nav-item:hover {
@@ -4439,8 +4447,6 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
   border: 1px solid #E5E7EB;
   overflow: hidden;
-  max-width: 672px;
-  margin: 0 auto;
 }
 
 /* Header del card */
@@ -6128,6 +6134,7 @@
 .badge-danger {
   background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%);
   color: #991B1B;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3), 0 0 0 2px white;
 }
 
 /* Responsive */

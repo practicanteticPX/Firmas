@@ -65,6 +65,7 @@ CREATE TABLE IF NOT EXISTS signatures (
     status VARCHAR(50) DEFAULT 'pending' CHECK (status IN ('pending', 'signed', 'rejected')),
     rejection_reason TEXT, -- Razón del rechazo cuando status = 'rejected'
     signed_at TIMESTAMP WITH TIME ZONE,
+    rejected_at TIMESTAMP WITH TIME ZONE, -- Fecha de rechazo cuando status = 'rejected'
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     -- Restricción: Un usuario solo puede firmar un documento una vez

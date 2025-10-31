@@ -1,7 +1,9 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const path = require('path');
 const { query } = require('../database/db');
 const { authenticateUser } = require('../services/ldap');
+const { addCoverPageWithSigners, updateSignersPage } = require('../utils/pdfCoverPage');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'tu-secreto-super-seguro-cambiar-en-produccion';
 
@@ -94,7 +96,30 @@ const resolvers = {
           d.*,
           u.name as uploaded_by_name,
           u.email as uploaded_by_email,
-          COALESCE(s.status, 'pending') as signature_status
+          COALESCE(s.status, 'pending') as signature_status,
+          ds.order_position,
+          CASE
+            WHEN ds.order_position > 1 THEN (
+              SELECT COUNT(*)
+              FROM document_signers ds_prev
+              LEFT JOIN signatures s_prev ON ds_prev.document_id = s_prev.document_id AND ds_prev.user_id = s_prev.signer_id
+              WHERE ds_prev.document_id = d.id
+                AND ds_prev.order_position < ds.order_position
+                AND COALESCE(s_prev.status, 'pending') != 'signed'
+            )
+            ELSE 0
+          END as pending_previous_signers,
+          CASE
+            WHEN ds.order_position > 1 THEN (
+              SELECT u_prev.name
+              FROM document_signers ds_prev
+              JOIN users u_prev ON ds_prev.user_id = u_prev.id
+              WHERE ds_prev.document_id = d.id
+                AND ds_prev.order_position = ds.order_position - 1
+              LIMIT 1
+            )
+            ELSE NULL
+          END as previous_signer_name
         FROM document_signers ds
         JOIN documents d ON ds.document_id = d.id
         JOIN users u ON d.uploaded_by = u.id
@@ -253,13 +278,40 @@ const resolvers = {
   },
 
   Mutation: {
-    // Login con Active Directory
+    // Login con autenticación local y fallback a Active Directory
     login: async (_, { email, password }) => {
       try {
+        // Primero intentar autenticación local
+        const localUserResult = await query(
+          'SELECT * FROM users WHERE email = $1 AND password_hash IS NOT NULL',
+          [email]
+        );
+
+        // Si existe usuario local con password_hash, validar contraseña
+        if (localUserResult.rows.length > 0) {
+          const localUser = localUserResult.rows[0];
+          const validPassword = await bcrypt.compare(password, localUser.password_hash);
+
+          if (validPassword) {
+            console.log('✓ Usuario local autenticado:', localUser.email);
+
+            const token = jwt.sign(
+              { id: localUser.id, email: localUser.email, role: localUser.role },
+              JWT_SECRET,
+              { expiresIn: process.env.JWT_EXPIRES || '8h' }
+            );
+
+            return { token, user: localUser };
+          }
+          // Si la contraseña no es válida, lanzar error inmediatamente
+          throw new Error('Usuario o contraseña inválidos');
+        }
+
+        // Si no hay usuario local, intentar con Active Directory
         const username = email.includes('@') ? email.split('@')[0] : email;
         const ldapUser = await authenticateUser(username, password);
 
-        // Buscar o crear usuario
+        // Buscar o crear usuario desde AD
         let result = await query(
           'SELECT * FROM users WHERE email = $1 OR ad_username = $2',
           [ldapUser.email, ldapUser.username]
@@ -284,7 +336,7 @@ const resolvers = {
             [ldapUser.name, ldapUser.email, user.id]
           );
           user = updateResult.rows[0];
-          console.log('✓ Usuario existente autenticado:', user.ad_username);
+          console.log('✓ Usuario existente autenticado desde AD:', user.ad_username);
         }
 
         const token = jwt.sign(
@@ -463,6 +515,69 @@ const resolvers = {
         [newStatus, documentId]
       );
 
+      // ========== GENERAR PÁGINA DE PORTADA ==========
+      try {
+        console.log(`📋 Generando página de portada para documento ${documentId}...`);
+
+        // Obtener información completa del documento y uploader
+        const docInfoResult = await query(
+          `SELECT d.*, u.name as uploader_name
+          FROM documents d
+          LEFT JOIN users u ON d.uploaded_by = u.id
+          WHERE d.id = $1`,
+          [documentId]
+        );
+
+        if (docInfoResult.rows.length === 0) {
+          throw new Error('Documento no encontrado');
+        }
+
+        const docInfo = docInfoResult.rows[0];
+
+        // Obtener lista completa de firmantes con su orden y estado actual
+        const signersResult = await query(
+          `SELECT u.id, u.name, u.email, ds.order_position,
+                  COALESCE(s.status, 'pending') as status,
+                  s.signed_at,
+                  s.rejected_at
+          FROM document_signers ds
+          JOIN users u ON ds.user_id = u.id
+          LEFT JOIN signatures s ON s.document_id = ds.document_id AND s.signer_id = ds.user_id
+          WHERE ds.document_id = $1
+          ORDER BY ds.order_position ASC`,
+          [documentId]
+        );
+
+        const signers = signersResult.rows;
+
+        if (signers.length === 0) {
+          console.log('⚠️ No hay firmantes asignados, saltando generación de portada');
+          return true;
+        }
+
+        // Construir la ruta completa al archivo PDF
+        // file_path ya incluye "uploads/" en su valor
+        const pdfPath = path.join(__dirname, '..', docInfo.file_path);
+
+        console.log(`📂 Ruta del PDF: ${pdfPath}`);
+
+        // Preparar información del documento para la portada
+        const documentInfo = {
+          title: docInfo.title,
+          createdAt: docInfo.created_at,
+          uploadedBy: docInfo.uploader_name || 'Sistema'
+        };
+
+        // Generar la página de portada
+        await addCoverPageWithSigners(pdfPath, signers, documentInfo);
+
+        console.log('✅ Página de portada generada exitosamente');
+      } catch (coverError) {
+        console.error('❌ Error al generar página de portada:', coverError);
+        // No lanzamos el error para que no falle la asignación de firmantes
+        // Solo registramos el error en los logs
+      }
+
       return true;
     },
 
@@ -501,6 +616,42 @@ const resolvers = {
     // Rechazar documento
     rejectDocument: async (_, { documentId, reason }, { user }) => {
       if (!user) throw new Error('No autenticado');
+
+      // Validar orden secuencial - el usuario debe ser el siguiente en la fila para rechazar
+      const orderCheck = await query(
+        `SELECT ds.order_position, ds.user_id
+        FROM document_signers ds
+        WHERE ds.document_id = $1 AND ds.user_id = $2`,
+        [documentId, user.id]
+      );
+
+      if (orderCheck.rows.length === 0) {
+        throw new Error('No estás asignado a este documento');
+      }
+
+      const currentOrder = orderCheck.rows[0].order_position;
+
+      // Si no es el primer firmante, validar que el anterior haya firmado
+      if (currentOrder > 1) {
+        const previousSignerCheck = await query(
+          `SELECT s.status, u.name as signer_name
+          FROM document_signers ds
+          JOIN signatures s ON s.document_id = ds.document_id AND s.signer_id = ds.user_id
+          JOIN users u ON u.id = ds.user_id
+          WHERE ds.document_id = $1 AND ds.order_position = $2`,
+          [documentId, currentOrder - 1]
+        );
+
+        if (previousSignerCheck.rows.length === 0) {
+          throw new Error('Error al verificar el orden de firma');
+        }
+
+        const previousSigner = previousSignerCheck.rows[0];
+
+        if (previousSigner.status !== 'signed') {
+          throw new Error(`Solo puedes rechazar cuando ${previousSigner.signer_name} haya firmado primero (Firmante #${currentOrder - 1})`);
+        }
+      }
 
       const now = new Date().toISOString();
 
@@ -553,12 +704,97 @@ const resolvers = {
         [user.id, 'reject', 'document', documentId, JSON.stringify({ reason })]
       );
 
+      // ========== ACTUALIZAR PÁGINA DE FIRMANTES ==========
+      try {
+        console.log(`📋 Actualizando página de firmantes para documento ${documentId}...`);
+
+        // Obtener información del documento
+        const docInfoResult = await query(
+          `SELECT d.*, u.name as uploader_name
+          FROM documents d
+          LEFT JOIN users u ON d.uploaded_by = u.id
+          WHERE d.id = $1`,
+          [documentId]
+        );
+
+        if (docInfoResult.rows.length > 0) {
+          const docInfo = docInfoResult.rows[0];
+
+          // Obtener firmantes con estados actualizados
+          const signersResult = await query(
+            `SELECT u.id, u.name, u.email, ds.order_position,
+                    COALESCE(s.status, 'pending') as status,
+                    s.signed_at,
+                    s.rejected_at
+            FROM document_signers ds
+            JOIN users u ON ds.user_id = u.id
+            LEFT JOIN signatures s ON s.document_id = ds.document_id AND s.signer_id = ds.user_id
+            WHERE ds.document_id = $1
+            ORDER BY ds.order_position ASC`,
+            [documentId]
+          );
+
+          const signers = signersResult.rows;
+          const pdfPath = path.join(__dirname, '..', docInfo.file_path);
+
+          const documentInfo = {
+            title: docInfo.title,
+            createdAt: docInfo.created_at,
+            uploadedBy: docInfo.uploader_name || 'Sistema'
+          };
+
+          // Actualizar la página de firmantes
+          await updateSignersPage(pdfPath, signers, documentInfo);
+
+          console.log('✅ Página de firmantes actualizada después de rechazar');
+        }
+      } catch (updateError) {
+        console.error('❌ Error al actualizar página de firmantes:', updateError);
+        // No lanzamos el error para que no falle el rechazo
+      }
+
       return true;
     },
 
     // Firmar documento
     signDocument: async (_, { documentId, signatureData }, { user }) => {
       if (!user) throw new Error('No autenticado');
+
+      // Validar orden secuencial de firma
+      const orderCheck = await query(
+        `SELECT ds.order_position, ds.user_id
+        FROM document_signers ds
+        WHERE ds.document_id = $1 AND ds.user_id = $2`,
+        [documentId, user.id]
+      );
+
+      if (orderCheck.rows.length === 0) {
+        throw new Error('No estás asignado para firmar este documento');
+      }
+
+      const currentOrder = orderCheck.rows[0].order_position;
+
+      // Si no es el primer firmante (order_position > 1), validar que el anterior haya firmado
+      if (currentOrder > 1) {
+        const previousSignerCheck = await query(
+          `SELECT s.status, u.name as signer_name
+          FROM document_signers ds
+          JOIN signatures s ON s.document_id = ds.document_id AND s.signer_id = ds.user_id
+          JOIN users u ON u.id = ds.user_id
+          WHERE ds.document_id = $1 AND ds.order_position = $2`,
+          [documentId, currentOrder - 1]
+        );
+
+        if (previousSignerCheck.rows.length === 0) {
+          throw new Error('Error al verificar el orden de firma');
+        }
+
+        const previousSigner = previousSignerCheck.rows[0];
+
+        if (previousSigner.status !== 'signed') {
+          throw new Error(`Debes esperar a que ${previousSigner.signer_name} firme el documento primero (Firmante #${currentOrder - 1})`);
+        }
+      }
 
       const result = await query(
         `UPDATE signatures
@@ -629,6 +865,55 @@ const resolvers = {
         'INSERT INTO audit_log (user_id, action, entity_type, entity_id) VALUES ($1, $2, $3, $4)',
         [user.id, 'sign', 'document', documentId]
       );
+
+      // ========== ACTUALIZAR PÁGINA DE FIRMANTES ==========
+      try {
+        console.log(`📋 Actualizando página de firmantes para documento ${documentId}...`);
+
+        // Obtener información del documento
+        const docInfoResult = await query(
+          `SELECT d.*, u.name as uploader_name
+          FROM documents d
+          LEFT JOIN users u ON d.uploaded_by = u.id
+          WHERE d.id = $1`,
+          [documentId]
+        );
+
+        if (docInfoResult.rows.length > 0) {
+          const docInfo = docInfoResult.rows[0];
+
+          // Obtener firmantes con estados actualizados
+          const signersResult = await query(
+            `SELECT u.id, u.name, u.email, ds.order_position,
+                    COALESCE(s.status, 'pending') as status,
+                    s.signed_at,
+                    s.rejected_at
+            FROM document_signers ds
+            JOIN users u ON ds.user_id = u.id
+            LEFT JOIN signatures s ON s.document_id = ds.document_id AND s.signer_id = ds.user_id
+            WHERE ds.document_id = $1
+            ORDER BY ds.order_position ASC`,
+            [documentId]
+          );
+
+          const signers = signersResult.rows;
+          const pdfPath = path.join(__dirname, '..', docInfo.file_path);
+
+          const documentInfo = {
+            title: docInfo.title,
+            createdAt: docInfo.created_at,
+            uploadedBy: docInfo.uploader_name || 'Sistema'
+          };
+
+          // Actualizar la página de firmantes
+          await updateSignersPage(pdfPath, signers, documentInfo);
+
+          console.log('✅ Página de firmantes actualizada después de firmar');
+        }
+      } catch (updateError) {
+        console.error('❌ Error al actualizar página de firmantes:', updateError);
+        // No lanzamos el error para que no falle la firma
+      }
 
       return result.rows[0];
     },

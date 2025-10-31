@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import './Dashboard.css';
 import './Dashboard.overrides.css';
+import './Rejected.css';
+import './SignersOrder.css';
 
 // Determinar el host del backend basándose en el hostname actual
 const getBackendHost = () => {
@@ -502,6 +504,37 @@ function Dashboard({ user, onLogout }) {
    */
   const clearSelectedSigners = () => {
     setSelectedSigners([]);
+  };
+
+  /**
+   * Mover firmante hacia arriba en el orden
+   */
+  const moveSignerUp = (index) => {
+    if (index === 0) return; // Ya está al inicio
+    setSelectedSigners(prev => {
+      const newOrder = [...prev];
+      [newOrder[index - 1], newOrder[index]] = [newOrder[index], newOrder[index - 1]];
+      return newOrder;
+    });
+  };
+
+  /**
+   * Mover firmante hacia abajo en el orden
+   */
+  const moveSignerDown = (index) => {
+    setSelectedSigners(prev => {
+      if (index === prev.length - 1) return prev; // Ya está al final
+      const newOrder = [...prev];
+      [newOrder[index], newOrder[index + 1]] = [newOrder[index + 1], newOrder[index]];
+      return newOrder;
+    });
+  };
+
+  /**
+   * Eliminar firmante de la lista seleccionada
+   */
+  const removeSignerFromSelected = (signerId) => {
+    setSelectedSigners(prev => prev.filter(id => id !== signerId));
   };
 
   /**
@@ -1363,9 +1396,7 @@ function Dashboard({ user, onLogout }) {
                   <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
                 Rechazados
-                {(rejectedByMe.length + rejectedByOthers.length) > 0 && (
-                  <span className="badge">{rejectedByMe.length + rejectedByOthers.length}</span>
-                )}
+                
               </button>
             </nav>
           </aside>
@@ -1650,124 +1681,200 @@ function Dashboard({ user, onLogout }) {
                   {/* Paso 1: Añadir firmantes */}
                   {activeStep === 1 && (
                     <>
-                      {/* Sección de selección de firmantes */}
-                      <div className="form-group signers-section">
-                        <label>Seleccionar firmantes</label>
-                        <p className="help-text">Elige las personas que deben firmar este documento</p>
+                      {loadingSigners ? (
+                        <div className="signers-loading">
+                          <span className="button-spinner"></span>
+                          <span>Cargando firmantes...</span>
+                        </div>
+                      ) : (
+                        <div className="signers-dual-panel">
+                          {/* Panel izquierdo: Seleccionar firmantes */}
+                          <div className="signers-panel-left">
+                            <div className="panel-header">
+                              <h3>Usuarios disponibles</h3>
+                              <p className="help-text">Haz clic para agregar</p>
+                            </div>
 
-                    {loadingSigners ? (
-                      <div className="signers-loading">
-                        <span className="button-spinner"></span>
-                        <span>Cargando firmantes...</span>
-                      </div>
-                    ) : (
-                      <>
-                        {/* Buscador de firmantes */}
-                        <div className="signers-search-container">
-                          <div className="search-input-wrapper">
-                            <svg className="search-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                            <input
-                              type="text"
-                              className="signers-search-input"
-                              placeholder="Buscar por nombre o correo..."
-                              value={searchTermUpload}
-                              onChange={(e) => setSearchTermUpload(e.target.value)}
-                              disabled={uploading}
-                            />
-                            {searchTermUpload && (
-                              <button
-                                className="search-clear-btn"
-                                onClick={() => setSearchTermUpload('')}
-                                type="button"
-                              >
-                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                  <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            {/* Buscador */}
+                            <div className="signers-search-container">
+                              <div className="search-input-wrapper">
+                                <svg className="search-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                  <path d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                 </svg>
-                              </button>
+                                <input
+                                  type="text"
+                                  className="signers-search-input"
+                                  placeholder="Buscar por nombre o correo..."
+                                  value={searchTermUpload}
+                                  onChange={(e) => setSearchTermUpload(e.target.value)}
+                                  disabled={uploading}
+                                />
+                                {searchTermUpload && (
+                                  <button
+                                    className="search-clear-btn"
+                                    onClick={() => setSearchTermUpload('')}
+                                    type="button"
+                                  >
+                                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                      <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    </svg>
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Lista de usuarios disponibles */}
+                            <div className="signers-list">
+                              {(() => {
+                                const filteredSigners = getFilteredSignersForUpload().filter(
+                                  s => !selectedSigners.includes(s.id)
+                                );
+                                if (availableSigners.length === 0) {
+                                  return (
+                                    <div className="signers-empty">
+                                      <p>No hay usuarios disponibles</p>
+                                    </div>
+                                  );
+                                }
+                                if (filteredSigners.length === 0) {
+                                  return (
+                                    <div className="signers-empty">
+                                      <p>
+                                        {searchTermUpload
+                                          ? `No se encontraron resultados para "${searchTermUpload}"`
+                                          : 'Todos los usuarios ya fueron agregados'}
+                                      </p>
+                                    </div>
+                                  );
+                                }
+                                return filteredSigners.map(signer => (
+                                  <div
+                                    key={signer.id}
+                                    className="signer-item-available"
+                                    onClick={() => !uploading && toggleSigner(signer.id)}
+                                    title={`Agregar a ${signer.name} (${signer.email})`}
+                                  >
+                                    <div className="signer-info">
+                                      <div className="signer-avatar" title={signer.name}>
+                                        {signer.name.charAt(0).toUpperCase()}
+                                      </div>
+                                      <div className="signer-details">
+                                        <p className="signer-name" title={signer.name}>
+                                          {signer.name}
+                                          {user && user.id === signer.id && (
+                                            <span className="you-badge">Tú</span>
+                                          )}
+                                        </p>
+                                        <p className="signer-email" title={signer.email}>{signer.email}</p>
+                                      </div>
+                                    </div>
+                                    <button className="add-signer-btn" type="button" title="Agregar firmante">
+                                      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                      </svg>
+                                    </button>
+                                  </div>
+                                ));
+                              })()}
+                            </div>
+                          </div>
+
+                          {/* Panel derecho: Firmantes seleccionados con orden */}
+                          <div className="signers-panel-right">
+                            <div className="panel-header">
+                              <h3>Orden de firmas</h3>
+                              <p className="help-text">
+                                {selectedSigners.length === 0
+                                  ? 'Selecciona firmantes de la izquierda'
+                                  : `${selectedSigners.length} firmante${selectedSigners.length !== 1 ? 's' : ''} • Orden secuencial`
+                                }
+                              </p>
+                            </div>
+
+                            {selectedSigners.length === 0 ? (
+                              <div className="signers-empty-state">
+                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                  <path d="M17 21V19C17 17.9391 16.5786 16.9217 15.8284 16.1716C15.0783 15.4214 14.0609 15 13 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21M23 21V19C22.9993 18.1137 22.7044 17.2528 22.1614 16.5523C21.6184 15.8519 20.8581 15.3516 20 15.13M16 3.13C16.8604 3.3503 17.623 3.8507 18.1676 4.55231C18.7122 5.25392 19.0078 6.11683 19.0078 7.005C19.0078 7.89317 18.7122 8.75608 18.1676 9.45769C17.623 10.1593 16.8604 10.6597 16 10.88M13 7C13 9.20914 11.2091 11 9 11C6.79086 11 5 9.20914 5 7C5 4.79086 6.79086 3 9 3C11.2091 3 13 4.79086 13 7Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
+                                <p>Agrega firmantes para definir el orden de firma</p>
+                                <span className="help-text-small">El primer firmante debe firmar antes que los demás</span>
+                              </div>
+                            ) : (
+                              <div className="selected-signers-list">
+                                {selectedSigners.map((signerId, index) => {
+                                  const signer = availableSigners.find(s => s.id === signerId);
+                                  if (!signer) return null;
+
+                                  return (
+                                    <div key={signerId} className="selected-signer-item" title={`${signer.name} - ${signer.email}`}>
+                                      <div className="signer-info">
+                                        <div className="signer-avatar" title={signer.name}>
+                                          {signer.name.charAt(0).toUpperCase()}
+                                        </div>
+                                        <div className="signer-details">
+                                          <p className="signer-name" title={signer.name}>
+                                            {signer.name}
+                                            {user && user.id === signer.id && (
+                                              <span className="you-badge">Tú</span>
+                                            )}
+                                          </p>
+                                          <p className="signer-email" title={signer.email}>{signer.email}</p>
+                                        </div>
+                                      </div>
+                                      <div className="order-controls">
+                                        <button
+                                          type="button"
+                                          className="order-btn"
+                                          onClick={() => moveSignerUp(index)}
+                                          disabled={index === 0 || uploading}
+                                          title="Mover arriba"
+                                        >
+                                          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M18 15L12 9L6 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                          </svg>
+                                        </button>
+                                        <button
+                                          type="button"
+                                          className="order-btn"
+                                          onClick={() => moveSignerDown(index)}
+                                          disabled={index === selectedSigners.length - 1 || uploading}
+                                          title="Mover abajo"
+                                        >
+                                          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                          </svg>
+                                        </button>
+                                        <button
+                                          type="button"
+                                          className="remove-btn"
+                                          onClick={() => removeSignerFromSelected(signerId)}
+                                          disabled={uploading}
+                                          title="Quitar"
+                                        >
+                                          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                          </svg>
+                                        </button>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+
+                            {selectedSigners.length > 0 && (
+                              <div className="order-info-box">
+                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                  <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
+                                <p>
+                                  <strong>Firma secuencial:</strong> Cada firmante debe esperar a que el anterior firme el documento.
+                                </p>
+                              </div>
                             )}
                           </div>
                         </div>
-
-                        <div className="signers-actions">
-                          <button
-                            type="button"
-                            className="signers-action-btn"
-                            onClick={selectAllSigners}
-                            disabled={uploading || availableSigners.length === 0}
-                          >
-                            Seleccionar todos
-                          </button>
-                          <button
-                            type="button"
-                            className="signers-action-btn"
-                            onClick={clearSelectedSigners}
-                            disabled={uploading || selectedSigners.length === 0}
-                          >
-                            Limpiar selección
-                          </button>
-                          <span className="signers-count">
-                            {selectedSigners.length} de {availableSigners.length} seleccionados
-                          </span>
-                        </div>
-
-                        <div className="signers-list">
-                          {(() => {
-                            const filteredSigners = getFilteredSignersForUpload();
-                            if (availableSigners.length === 0) {
-                              return (
-                                <div className="signers-empty">
-                                  <p>No hay usuarios disponibles para seleccionar como firmantes</p>
-                                </div>
-                              );
-                            }
-                            if (filteredSigners.length === 0) {
-                              return (
-                                <div className="signers-empty">
-                                  <p>No se encontraron firmantes que coincidan con "{searchTermUpload}"</p>
-                                </div>
-                              );
-                            }
-                            return filteredSigners.map(signer => (
-                              <div
-                                key={signer.id}
-                                className={`signer-item ${selectedSigners.includes(signer.id) ? 'selected' : ''}`}
-                                onClick={() => !uploading && toggleSigner(signer.id)}
-                              >
-                                <div className="signer-checkbox">
-                                  {selectedSigners.includes(signer.id) && (
-                                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                      <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
-                                    </svg>
-                                  )}
-                                </div>
-                                <div className="signer-info">
-                                  <div className="signer-avatar">
-                                    {signer.name.charAt(0).toUpperCase()}
-                                  </div>
-                                  <div className="signer-details">
-                                    <p className="signer-name">
-                                      {signer.name}
-                                      {user && user.id === signer.id && (
-                                        <span className="you-badge">Tú</span>
-                                      )}
-                                    </p>
-                                    <p className="signer-email">{signer.email}</p>
-                                  </div>
-                                </div>
-                                <div className="signer-role">
-                                  <span className={`role-badge role-${signer.role}`}>
-                                    {signer.role === 'admin' ? 'Admin' : 'Usuario'}
-                                  </span>
-                                </div>
-                              </div>
-                            ));
-                          })()}
-                        </div>
-                      </>
-                    )}
-                      </div>
+                      )}
                     </>
                   )}
 
@@ -2191,7 +2298,7 @@ function Dashboard({ user, onLogout }) {
                 <div>
                   <h2 className="section-title">Documentos Rechazados</h2>
                   <p className="section-subtitle">
-                    Documentos que han sido rechazados por ti o por otros firmantes
+                    Documentos que han sido rechazados por ti o por otros firmantes.
                   </p>
                 </div>
               </div>
@@ -2204,12 +2311,15 @@ function Dashboard({ user, onLogout }) {
               ) : (
                 <>
                   {/* Documentos que YO rechacé */}
-                  <div className="rejected-subsection">
-                    <h3 className="subsection-title">
-                      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <div className="rejected-subsection-modern">
+                    <h3 className="rejected-subsection-title">
+                      <svg className="thumbs-down-icon" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/>
                       </svg>
-                      Documentos que rechacé ({rejectedByMe.length})
+                      Documentos que rechacé
+                      {rejectedByMe.length > 0 && (
+                        <span className="rejected-section-badge">{rejectedByMe.length}</span>
+                      )}
                     </h3>
 
                     {rejectedByMe.length === 0 ? (
@@ -2220,42 +2330,42 @@ function Dashboard({ user, onLogout }) {
                         <p>No has rechazado ningún documento</p>
                       </div>
                     ) : (
-                      <div className="rejected-docs-list">
+                      <div className="rejected-docs-list-modern">
                         {rejectedByMe.map(doc => {
                           const myRejection = doc.signatures?.find(sig => sig.status === 'rejected');
 
                           return (
-                            <div key={doc.id} className="rejected-doc-card">
-                              <div className="rejected-doc-header">
-                                <h3 className="rejected-doc-title">{doc.title}</h3>
-                                <span className="rejected-badge rejected-by-me-badge">
-                                  Rechazado por ti
-                                </span>
+                            <div key={doc.id} className="rejected-card-modern rejected-by-me">
+                              <div className="rejected-card-header-modern">
+                                <h4 className="rejected-card-title">{doc.title}</h4>
+                                <span className="rejected-badge-red">Rechazado por ti</span>
                               </div>
 
-                              <p className="rejected-doc-date">
+                              <p className="rejected-card-date">
                                 Rechazado el {formatDateTime(myRejection?.rejectedAt || myRejection?.signedAt || doc.createdAt)}
                               </p>
 
                               {myRejection?.rejectionReason && (
-                                <div className="rejected-reason-container">
-                                  <strong className="rejected-reason-label">Tu justificación:</strong>
-                                  <div className="rejected-reason-text">
+                                <div className="rejection-reason-block">
+                                  <p className="rejection-reason-label">Tu justificación:</p>
+                                  <div className="rejection-reason-box-gray">
                                     "{myRejection.rejectionReason}"
                                   </div>
                                 </div>
                               )}
 
-                              <button
-                                className="rejected-view-btn"
-                                onClick={() => handleViewDocument(doc)}
-                              >
-                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                  <path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                  <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                </svg>
-                                Ver documento
-                              </button>
+                              <div className="rejected-card-actions">
+                                <button
+                                  className="rejected-action-btn"
+                                  onClick={() => window.open(getDocumentUrl(doc.filePath), '_blank')}
+                                  title="Ver documento"
+                                >
+                                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                  </svg>
+                                </button>
+                              </div>
                             </div>
                           );
                         })}
@@ -2264,12 +2374,15 @@ function Dashboard({ user, onLogout }) {
                   </div>
 
                   {/* Documentos rechazados por OTROS */}
-                  <div className="rejected-subsection">
-                    <h3 className="subsection-title">
-                      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <div className="rejected-subsection-modern">
+                    <h3 className="rejected-subsection-title">
+                      <svg className="users-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M17 21V19C17 17.9391 16.5786 16.9217 15.8284 16.1716C15.0783 15.4214 14.0609 15 13 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21M23 21V19C22.9993 18.1137 22.7044 17.2528 22.1614 16.5523C21.6184 15.8519 20.8581 15.3516 20 15.13M16 3.13C16.8604 3.35031 17.623 3.85071 18.1676 4.55232C18.7122 5.25392 19.0078 6.11683 19.0078 7.005C19.0078 7.89317 18.7122 8.75608 18.1676 9.45768C17.623 10.1593 16.8604 10.6597 16 10.88M13 7C13 9.20914 11.2091 11 9 11C6.79086 11 5 9.20914 5 7C5 4.79086 6.79086 3 9 3C11.2091 3 13 4.79086 13 7Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
-                      Rechazados por otros firmantes ({rejectedByOthers.length})
+                      Rechazados por otros firmantes
+                      {rejectedByOthers.length > 0 && (
+                        <span className="rejected-section-badge">{rejectedByOthers.length}</span>
+                      )}
                     </h3>
 
                     {rejectedByOthers.length === 0 ? (
@@ -2280,49 +2393,55 @@ function Dashboard({ user, onLogout }) {
                         <p>No tienes documentos rechazados por otros</p>
                       </div>
                     ) : (
-                      <div className="rejected-docs-list">
+                      <div className="rejected-docs-list-modern">
                         {rejectedByOthers.map(doc => {
                           const rejection = doc.signatures?.find(sig => sig.status === 'rejected');
 
                           return (
-                            <div key={doc.id} className="rejected-doc-card">
-                              <div className="rejected-doc-header">
-                                <h3 className="rejected-doc-title">{doc.title}</h3>
-                                <span className="rejected-badge rejected-by-others-badge">
-                                  Rechazado
-                                </span>
+                            <div key={doc.id} className="rejected-card-modern rejected-by-others">
+                              <div className="rejected-card-header-modern">
+                                <h4 className="rejected-card-title">{doc.title}</h4>
+                                <span className="rejected-badge-red">Rechazado</span>
                               </div>
 
-                              <p className="rejected-doc-date">
-                                Rechazado el {formatDateTime(rejection?.rejectedAt || rejection?.signedAt || doc.createdAt)}
+                              <p className="rejected-card-date">
+                                {formatDateTime(rejection?.rejectedAt || rejection?.signedAt || doc.createdAt)}
                               </p>
 
-                              <div className="rejector-info">
-                                <strong className="rejector-label">Rechazado por:</strong>
-                                <p className="rejector-name">
-                                  {rejection?.signer?.name || 'Usuario'} ({rejection?.signer?.email})
-                                </p>
+                              <div className="rejector-info-block">
+                                <p className="rejector-label">Rechazado por:</p>
+                                <div className="rejector-user-info">
+                                  <svg className="user-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                  </svg>
+                                  <div className="rejector-text">
+                                    <p className="rejector-name">{rejection?.signer?.name || 'Usuario'}</p>
+                                    <p className="rejector-email">{rejection?.signer?.email}</p>
+                                  </div>
+                                </div>
                               </div>
 
                               {rejection?.rejectionReason && (
-                                <div className="rejected-reason-container">
-                                  <strong className="rejected-reason-label">Razón del rechazo:</strong>
-                                  <div className="rejected-reason-text">
+                                <div className="rejection-reason-block">
+                                  <p className="rejection-reason-label">Razón del rechazo:</p>
+                                  <div className="rejection-reason-box-red">
                                     "{rejection.rejectionReason}"
                                   </div>
                                 </div>
                               )}
 
-                              <button
-                                className="rejected-view-btn"
-                                onClick={() => handleViewDocument(doc)}
-                              >
-                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                  <path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                  <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                </svg>
-                                Ver documento
-                              </button>
+                              <div className="rejected-card-actions">
+                                <button
+                                  className="rejected-action-btn"
+                                  onClick={() => handleViewDocument(doc)}
+                                  title="Ver documento"
+                                >
+                                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                  </svg>
+                                </button>
+                              </div>
                             </div>
                           );
                         })}
