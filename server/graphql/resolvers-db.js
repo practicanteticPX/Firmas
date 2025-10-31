@@ -209,6 +209,7 @@ const resolvers = {
         -- Usuario que rechazó
         JOIN users rejector_user ON rejector_sig.signer_id = rejector_user.id
         WHERE d.status = 'rejected'
+          AND d.uploaded_by != $1  -- Excluir documentos que YO creé
         ORDER BY sort_date DESC
       `, [user.id]);
 

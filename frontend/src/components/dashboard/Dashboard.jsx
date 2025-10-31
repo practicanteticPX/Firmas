@@ -149,9 +149,47 @@ function Dashboard({ user, onLogout }) {
     if (viewingDocument) {
       document.title = viewingDocument.title || 'Visor de Documentos';
     } else {
-      document.title = 'FirmaPRO - Plataforma de Firmas Digitales';
+      document.title = 'FirmaPRO';
     }
   }, [viewingDocument]);
+
+  // Bloquear scroll del body cuando hay un modal abierto
+  useEffect(() => {
+    const hasModalOpen = viewingDocument ||
+                        showSignConfirm ||
+                        showRejectConfirm ||
+                        showRejectSuccess ||
+                        showQuickSignConfirm ||
+                        managingDocument ||
+                        confirmDeleteOpen;
+
+    if (hasModalOpen) {
+      // Guardar el scroll actual para restaurarlo después
+      const scrollY = window.scrollY;
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
+    } else {
+      // Restaurar scroll
+      const scrollY = document.body.style.top;
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      if (scrollY) {
+        window.scrollTo(0, parseInt(scrollY || '0') * -1);
+      }
+    }
+
+    // Cleanup al desmontar
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+    };
+  }, [viewingDocument, showSignConfirm, showRejectConfirm, showRejectSuccess, showQuickSignConfirm, managingDocument, confirmDeleteOpen]);
 
   // Cargar documentos pendientes al montar o cambiar de tab
   useEffect(() => {
@@ -2522,7 +2560,7 @@ function Dashboard({ user, onLogout }) {
                               <div className="rejected-card-actions">
                                 <button
                                   className="rejected-action-btn"
-                                  onClick={() => window.open(getDocumentUrl(doc.filePath), '_blank')}
+                                  onClick={() => handleViewDocument(doc)}
                                   title="Ver documento"
                                 >
                                   <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
