@@ -79,8 +79,8 @@ router.post('/upload', authenticate, (req, res) => {
         }
       }
 
-      // Título real del documento = nombre del archivo sin extensión
-      const docTitle = path.basename(req.file.originalname, path.extname(req.file.originalname));
+      // Usar el título proporcionado por el usuario, o el nombre del archivo como fallback
+      const docTitle = title?.trim() || path.basename(req.file.originalname, path.extname(req.file.originalname));
 
       // Guardar el documento en la base de datos
       const result = await query(
@@ -201,7 +201,8 @@ router.post('/upload-multiple', authenticate, (req, res) => {
             console.error('Error moviendo archivo (múltiple) a carpeta de grupo:', moveErr);
           }
         }
-        const docTitle = path.basename(f.originalname, path.extname(f.originalname));
+        // Usar el título proporcionado por el usuario, o el nombre del archivo como fallback
+        const docTitle = title?.trim() || path.basename(f.originalname, path.extname(f.originalname));
         const result = await query(
           `INSERT INTO documents (
             title,

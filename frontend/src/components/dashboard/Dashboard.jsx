@@ -53,6 +53,10 @@ function Dashboard({ user, onLogout }) {
   const [showDescription, setShowDescription] = useState(false);
   const [showRejectSuccess, setShowRejectSuccess] = useState(false);
 
+  // Estados para confirmación de firma rápida (desde la tarjeta)
+  const [showQuickSignConfirm, setShowQuickSignConfirm] = useState(false);
+  const [documentToSign, setDocumentToSign] = useState(null);
+
   // Estados para firmantes
   const [availableSigners, setAvailableSigners] = useState([]);
   const [selectedSigners, setSelectedSigners] = useState([]);
@@ -140,6 +144,15 @@ function Dashboard({ user, onLogout }) {
     }
   };
 
+  // Cambiar el título de la página cuando se abre el visor de PDF
+  useEffect(() => {
+    if (viewingDocument) {
+      document.title = viewingDocument.title || 'Visor de Documentos';
+    } else {
+      document.title = 'FirmaPRO - Plataforma de Firmas Digitales';
+    }
+  }, [viewingDocument]);
+
   // Cargar documentos pendientes al montar o cambiar de tab
   useEffect(() => {
     if (activeTab === 'pending') {
@@ -199,6 +212,18 @@ function Dashboard({ user, onLogout }) {
                 }
                 createdAt
                 status
+                signatures {
+                  id
+                  status
+                  signedAt
+                  rejectionReason
+                  rejectedAt
+                  signer {
+                    id
+                    name
+                    email
+                  }
+                }
               }
             }
           `
@@ -1040,6 +1065,33 @@ function Dashboard({ user, onLogout }) {
       setRejectReason('');
       setRejectError('');
       handleCloseViewer();
+    }
+  };
+
+  /**
+   * Abrir modal de confirmación de firma rápida
+   */
+  const handleOpenQuickSignConfirm = (doc) => {
+    setDocumentToSign(doc);
+    setShowQuickSignConfirm(true);
+  };
+
+  /**
+   * Cancelar firma rápida
+   */
+  const handleCancelQuickSign = () => {
+    setShowQuickSignConfirm(false);
+    setDocumentToSign(null);
+  };
+
+  /**
+   * Confirmar firma rápida
+   */
+  const handleConfirmQuickSign = async () => {
+    if (documentToSign) {
+      await handleSignDocument(documentToSign.id);
+      setShowQuickSignConfirm(false);
+      setDocumentToSign(null);
     }
   };
 
@@ -1972,7 +2024,7 @@ function Dashboard({ user, onLogout }) {
 
           {/* Pending Documents Section - Minimal */}
           {activeTab === 'pending' && (
-            <div className="section pending-section-minimal" id='pending-section-minimal'>
+            <div className="section my-documents-section-clean">
               <div className="section-header-minimal">
                 <div>
                   <h2 className="section-title-minimal">Pendientes de Firma</h2>
@@ -1996,63 +2048,122 @@ function Dashboard({ user, onLogout }) {
                   <p className="empty-text-minimal">Todos tus documentos han sido firmados</p>
                 </div>
               ) : (
-                <div className="documents-grid-minimal">
-                  {pendingDocuments.map((doc) => (
-                    <div key={doc.id} className="doc-card-minimal">
-                      <div className="doc-card-header-minimal">
-                        <div className="doc-icon-minimal">
-                          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            <path d="M14 2V8H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        </div>
-                        <span className="doc-badge-minimal pending">Pendiente</span>
-                      </div>
+                <div className="my-docs-grid-clean">
+                  {pendingDocuments.map((doc) => {
+                    const getStatusConfig = (status, signatures = []) => {
+                      const hasRejection = signatures.some(sig => sig.status === 'rejected');
+                      const allSigned = signatures.length > 0 && signatures.every(sig => sig.status === 'signed');
 
-                      <div className="doc-card-body-minimal">
-                        <h3 className="doc-card-title-minimal">{doc.title}</h3>
-                        {doc.description && (
-                          <p className="doc-card-description-minimal">{doc.description}</p>
-                        )}
-                        <div className="doc-card-meta-minimal">
-                          <div className="doc-meta-item-minimal">
-                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21M16 7C16 9.20914 14.2091 11 12 11C9.79086 11 8 9.20914 8 7C8 4.79086 9.79086 3 12 3C14.2091 3 16 4.79086 16 7Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                            <span>{doc.uploadedBy?.name || doc.uploadedBy?.email || 'Desconocido'}</span>
+                      if (hasRejection) {
+                        return { label: 'Rechazado', color: '#991B1B', bg: '#FEE2E2' };
+                      } else if (allSigned) {
+                        return { label: 'Completado', color: '#065F46', bg: '#D1FAE5' };
+                      } else {
+                        return { label: 'Pendiente', color: '#92400E', bg: '#FEF3C7' };
+                      }
+                    };
+
+                    const signatures = doc.signatures || [];
+                    const statusConfig = getStatusConfig(doc.status, signatures);
+
+                    return (
+                      <div key={doc.id} className="my-doc-card-reference">
+                        <div className="doc-content-wrapper">
+                          <div className="doc-header-row">
+                            <h3 className="doc-title-reference">{doc.title}</h3>
+                            <div className="status-badge-clean" style={{
+                              color: statusConfig.color,
+                              backgroundColor: statusConfig.bg
+                            }}>
+                              {statusConfig.label}
+                            </div>
                           </div>
-                          <div className="doc-meta-item-minimal">
-                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M12 8V12L15 15M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                            <span>{formatDateTime(doc.createdAt)}</span>
+
+                          <div className="doc-meta-row">
+                            <span className="doc-created-text">
+                              Creado el {formatDateTime(doc.createdAt)} por {doc.uploadedBy?.name || doc.uploadedBy?.email || 'Desconocido'}
+                            </span>
+                          </div>
+
+                          {statusConfig.label === 'Rechazado' && (() => {
+                            const rejectedSignature = signatures.find(sig => sig.status === 'rejected' && sig.rejectionReason);
+                            if (!rejectedSignature) return null;
+
+                            return (
+                              <div className="rejection-info-box">
+                                <div className="rejection-header">
+                                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M12 9V13M12 17H12.01M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                  </svg>
+                                  <span className="rejection-title">
+                                    Rechazado por {rejectedSignature.signer?.name || rejectedSignature.signer?.email}
+                                  </span>
+                                </div>
+                                <p className="rejection-reason">{rejectedSignature.rejectionReason}</p>
+                              </div>
+                            );
+                          })()}
+
+                          <div className="doc-signers-row">
+                            {(expandedSigners[doc.id] ? signatures : signatures.slice(0, 3)).map((sig) => {
+                              const getSignerStatusColor = (status) => {
+                                if (status === 'signed') return '#10B981';
+                                if (status === 'rejected') return '#EF4444';
+                                return '#F59E0B';
+                              };
+
+                              return (
+                                <div key={sig.id} className="signer-item-horizontal">
+                                  <span
+                                    className="signer-dot"
+                                    style={{ backgroundColor: getSignerStatusColor(sig.status) }}
+                                  ></span>
+                                  <span className="signer-name">{sig.signer?.name || sig.signer?.email}</span>
+                                </div>
+                              );
+                            })}
+                            {signatures.length > 3 && (
+                              <button
+                                className="btn-ver-todos"
+                                onClick={() => setExpandedSigners({
+                                  ...expandedSigners,
+                                  [doc.id]: !expandedSigners[doc.id]
+                                })}
+                              >
+                                {expandedSigners[doc.id] ? '- ver menos' : '+ ver todos'}
+                              </button>
+                            )}
                           </div>
                         </div>
-                      </div>
 
-                      <div className="doc-card-actions-minimal">
-                        <button
-                          className="btn-minimal-secondary"
-                          onClick={() => handleViewDocument(doc, true)}
-                        >
-                          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                          Ver documento
-                        </button>
-                        <button
-                          className="btn-minimal-primary"
-                          onClick={() => handleSignDocument(doc.id)}
-                        >
-                          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M11 5H6C5.46957 5 4.96086 5.21071 4.58579 5.58579C4.21071 5.96086 4 6.46957 4 7V19C4 19.5304 4.21071 20.0391 4.58579 20.4142C4.96086 20.7893 5.46957 21 6 21H18C18.5304 21 19.0391 20.7893 19.4142 20.4142C19.7893 20.0391 20 19.5304 20 19V14M18.5 2.5C18.8978 2.1022 19.4374 1.87868 20 1.87868C20.5626 1.87868 21.1022 2.1022 21.5 2.5C21.8978 2.8978 22.1213 3.43739 22.1213 4C22.1213 4.56261 21.8978 5.1022 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                          Firmar ahora
-                        </button>
+                        <div className="doc-actions-clean">
+                          <button
+                            className="btn-action-clean"
+                            onClick={() => handleViewDocument(doc, true)}
+                            title="Ver documento"
+                            style={{marginTop: '-1.5vw'}}
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                              <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          </button>
+                          {statusConfig.label !== 'Rechazado' && statusConfig.label !== 'Completado' && (
+                            <button
+                              className="btn-action-clean"
+                              onClick={() => handleOpenQuickSignConfirm(doc)}
+                              title="Firmar documento"
+                              style={{marginTop: '-1.5vw'}}
+                            >
+                              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M11 5H6C5.46957 5 4.96086 5.21071 4.58579 5.58579C4.21071 5.96086 4 6.46957 4 7V19C4 19.5304 4.21071 20.0391 4.58579 20.4142C4.96086 20.7893 5.46957 21 6 21H18C18.5304 21 19.0391 20.7893 19.4142 20.4142C19.7893 20.0391 20 19.5304 20 19V14M18.5 2.5C18.8978 2.1022 19.4374 1.87868 20 1.87868C20.5626 1.87868 21.1022 2.1022 21.5 2.5C21.8978 2.8978 22.1213 3.43739 22.1213 4C22.1213 4.56261 21.8978 5.1022 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                            </button>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -2114,7 +2225,7 @@ function Dashboard({ user, onLogout }) {
 
                           <div className="doc-meta-row">
                             <span className="doc-created-text">
-                              {doc.signedAt ? `Firmado el ${formatDateTime(doc.signedAt)}` : `Creado el ${formatDateTime(doc.createdAt)}`}
+                              {doc.signedAt ? `Firmado el ${formatDateTime(doc.signedAt)}` : `Creado el ${formatDateTime(doc.createdAt)}`} por {doc.uploadedBy?.name || doc.uploadedBy?.email || 'Desconocido'}
                             </span>
                           </div>
 
@@ -2589,11 +2700,13 @@ function Dashboard({ user, onLogout }) {
               data={getDocumentUrl(viewingDocument.filePath)}
               type="application/pdf"
               className="pdf-viewer-minimal-iframe"
+              title={viewingDocument.title}
             >
               <embed
                 src={getDocumentUrl(viewingDocument.filePath)}
                 type="application/pdf"
                 className="pdf-viewer-minimal-iframe"
+                title={viewingDocument.title}
               />
               <div className="pdf-fallback-minimal">
                 <div className="fallback-icon">
@@ -2932,6 +3045,34 @@ function Dashboard({ user, onLogout }) {
                 style={{background:"#fee2e2"}}
                 >
                 {deleting ? 'Eliminando...' : 'Eliminar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de confirmación de firma rápida */}
+      {showQuickSignConfirm && documentToSign && (
+        <div className="sign-confirm-overlay" onClick={handleCancelQuickSign}>
+          <div className="sign-confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="sign-confirm-icon">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M11 5H6C5.46957 5 4.96086 5.21071 4.58579 5.58579C4.21071 5.96086 4 6.46957 4 7V19C4 19.5304 4.21071 20.0391 4.58579 20.4142C4.96086 20.7893 5.46957 21 6 21H18C18.5304 21 19.0391 20.7893 19.4142 20.4142C19.7893 20.0391 20 19.5304 20 19V14M18.5 2.5C18.8978 2.1022 19.4374 1.87868 20 1.87868C20.5626 1.87868 21.1022 2.1022 21.5 2.5C21.8978 2.8978 22.1213 3.43739 22.1213 4C22.1213 4.56261 21.8978 5.1022 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+            <h3 className="sign-confirm-title">Confirmar firma</h3>
+            <p className="sign-confirm-message">
+              ¿Estás seguro de que deseas firmar el documento "<strong>{documentToSign.title}</strong>"?
+            </p>
+            <p className="sign-confirm-message" style={{fontSize: '0.85rem', marginTop: '0.5rem', opacity: 0.8}}>
+              Esta acción no se puede deshacer.
+            </p>
+            <div className="sign-confirm-actions">
+              <button className="sign-confirm-btn cancel" onClick={handleCancelQuickSign}>
+                Cancelar
+              </button>
+              <button className="sign-confirm-btn confirm" onClick={handleConfirmQuickSign}>
+                Firmar
               </button>
             </div>
           </div>
